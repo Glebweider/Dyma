@@ -13,32 +13,21 @@ AChair::AChair()
 	PrimaryActorTick.bCanEverTick = false;
 }
 
+ACharacter* AChair::GetCharacter()
+{
+	if (!Character) return nullptr;
+	return Character;
+}
+
 void AChair::SetCharacter(ACharacter* NewCharacter)
 {
 	Character = NewCharacter;
 	SetOwner(NewCharacter->GetController());
-		
-	Server_UpdateNameplate(NewCharacter);
 }
 
 void AChair::OnRep_Character()
 {
-	Server_UpdateNameplate(Character);
-}
-
-void AChair::Server_UpdateNameplate_Implementation(ACharacter* NewCharacter)
-{
-	UpdateNameplate(NewCharacter);
-}
-
-void AChair::UpdateNameplate_Implementation(ACharacter* NewCharacter)
-{
-	if (!Nameplate) return;
-
-	if (NewCharacter && NewCharacter->GetPlayerState()) {
-		UE_LOG(LogTemp, Display, TEXT("1111 NewCharacter: %s"), *NewCharacter->GetPlayerState()->GetPlayerName());
-		Nameplate->RenderText(NewCharacter->GetPlayerState()->GetPlayerName());
-	}
+	
 }
 
 void AChair::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -46,5 +35,4 @@ void AChair::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePr
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AChair, Character);
-	DOREPLIFETIME(AChair, Nameplate);
 }

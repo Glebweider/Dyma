@@ -39,12 +39,13 @@ void ADF_MainGamemode::OnPostLogin(AController* NewPlayer)
 	}
 
 	RestartPlayer(NewPlayer);
-
+	
 	if (APawn* PlayerPawn = NewPlayer->GetPawn())
 		for (AChair* Chair : Chairs)
 			if (!Chair->GetCharacter())
 			{
 				Chair->SetCharacter(Cast<ACharacter>(PlayerPawn));
+				Chair->SetOwner(NewPlayer);
 				
 				FVector SeatPos = Chair->GetActorLocation() + FVector(0.f, 0.f, 65.f);
 				PlayerPawn->SetActorLocation(SeatPos);
@@ -62,9 +63,14 @@ void ADF_MainGamemode::OnPostLogin(AController* NewPlayer)
 					
 					PC->SetViewTargetWithBlend(CameraActors[0], 0.0f);
 				}
-
 				return;
 			}
+}
+
+void ADF_MainGamemode::RestartPlayer(AController* NewPlayer)
+{
+	Super::RestartPlayer(NewPlayer);
+
 }
 
 void ADF_MainGamemode::SetPhase(EGamePhase NewPhase, float Duration, const FTimerDelegate& NextPhaseCallback)

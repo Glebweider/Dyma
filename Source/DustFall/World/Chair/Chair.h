@@ -16,23 +16,16 @@ class DUSTFALL_API AChair : public AActor
 public:
 	AChair();
 
-	ACharacter* GetCharacter() const { return Character; }
+	UFUNCTION(BlueprintCallable)
+	ACharacter* GetCharacter();
+	
 	void SetCharacter(ACharacter* NewCharacter);
-
-	UPROPERTY(EditAnywhere, Replicated)
-	ANameplate* Nameplate;
 
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UFUNCTION()
 	void OnRep_Character();
-
-	UFUNCTION(Reliable, Server)
-	void Server_UpdateNameplate(ACharacter* NewCharacter);
-
-	UFUNCTION(Reliable, NetMulticast)
-	virtual void UpdateNameplate(ACharacter* NewCharacter);
 
 	UPROPERTY(ReplicatedUsing=OnRep_Character)
 	ACharacter* Character;

@@ -22,6 +22,7 @@ public:
 	
 protected:
 	virtual void OnPostLogin(AController* NewPlayer) override;
+	virtual void RestartPlayer(AController* NewPlayer) override;
 	virtual void SetPhase(EGamePhase NewPhase, float Duration, const FTimerDelegate& NextPhaseCallback);
 
 private:
