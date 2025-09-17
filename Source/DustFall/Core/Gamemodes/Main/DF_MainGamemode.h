@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
+#include "Net/UnrealNetwork.h"
 #include "DF_MainGamemode.generated.h"
 
 enum class EGamePhase : uint8;
@@ -19,19 +20,37 @@ class DUSTFALL_API ADF_MainGamemode : public AGameModeBase
 
 public:
 	virtual void StartGame();
-	
-protected:
 	virtual void OnPostLogin(AController* NewPlayer) override;
-	virtual void SetPhase(EGamePhase NewPhase, float Duration, const FTimerDelegate& NextPhaseCallback);
+	virtual void StartDocReviewPhase();
 
-private:
-	FTimerHandle PhaseTimer;
+protected:
 	
+	UFUNCTION()
+	void StartRoundsPhase();
+
+	UFUNCTION()
+	void StartDebatPhase();
+
+	UFUNCTION()
+	void StartVotePhase();
+
 	UPROPERTY()
 	TArray<AChair*> Chairs;
 
 	UPROPERTY()
 	ADF_GameState* DF_GameState;
 
+private:
+	void NextSpeaker();
+	void PauseBeforeNext();
+	
 	bool bIsLobbyOpen = true;
+	
+	int32 CurrentSpeakerIndex = 0;
+	int32 CurrentRound = 0;
+	
+	TArray<ACharacter*> RoundCharacters;
+	
+	FTimerHandle SpeakerTimer;
+	FTimerHandle PauseTimer;
 };

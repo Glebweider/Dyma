@@ -13,4 +13,14 @@ UCLASS()
 class DUSTFALL_API ADF_PlayerState : public APlayerState
 {
 	GENERATED_BODY()
+
+public:
+	UPROPERTY(Replicated, BlueprintReadOnly, Category="Voting")
+	APlayerState* VotedForPlayer = nullptr;
+
+	UFUNCTION(Server, Reliable)
+	void Server_SetVote(APlayerState* TargetPlayer);
+
+protected:
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 };

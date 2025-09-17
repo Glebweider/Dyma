@@ -12,8 +12,7 @@ ANameplate::ANameplate()
 void ANameplate::RenderText(const FString& Nickname)
 {
 	FString ShortNickname = Nickname.Left(10);
-	UE_LOG(LogTemp, Warning, TEXT("1111 %s"), *Nickname);
-	
+
 	FindComponentByTag<UTextRenderComponent>(TEXT("Forward"))->SetText(FText::FromString(ShortNickname));
 	FindComponentByTag<UTextRenderComponent>(TEXT("Backward"))->SetText(FText::FromString(ShortNickname));
 }

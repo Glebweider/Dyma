@@ -4,8 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "DustFall/UI/Interface/PlayerToUIInterface.h"
-#include "DustFall/UI/Widgets/BaseUserWidget/BaseUserWidget.h"
+#include "DustFall/UI/Interfaces/PlayerToUIInterface.h"
+#include "DustFall/UI/Widgets/BaseUser/BaseUserWidget.h"
 #include "UIManager.generated.h"
 
 

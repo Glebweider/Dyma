@@ -9,6 +9,7 @@ enum class EGamePhase : uint8
 	RoundIntro,         // 1-й круг: знакомство (30 сек)
 	Round,              // 2-й круг
 	Debate,             // Круг споров (45 сек) – повторяется пока >2 игроков
+	Vote,
 	RoundBreak,         // 3 мин – добровольный перерыв
 	PreFinalPause,      // 30 сек – перерыв перед финалом
 	FinalVote,          // Голосование зрителей

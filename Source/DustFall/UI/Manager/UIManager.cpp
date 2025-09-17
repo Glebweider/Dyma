@@ -36,7 +36,6 @@ bool UUIManager::ShowUI_Implementation(TSubclassOf<UBaseUserWidget> WidgetClass)
 	if (!PlayerController)
 		PlayerController = Cast<APlayerController>(GetOwner());
 	
-	UE_LOG(LogTemp, Warning, TEXT("ZZ"));
 	if (UBaseUserWidget* Widget = GetActivityWidgetByClass(WidgetClass))
 	{
 		if (Widget->IsVisible())
@@ -57,28 +56,27 @@ bool UUIManager::ShowUI_Implementation(TSubclassOf<UBaseUserWidget> WidgetClass)
 		Widget->SetVisibility(ESlateVisibility::Visible);
 		if (Widget->bCanClose)
 			ActivityWidget = Widget;
-		
-		SetInputSettings(true);
+
+		if (Widget->bCanBlockedInput)
+			SetInputSettings(true);
 		
 		return true;
 	}
-
-	UE_LOG(LogTemp, Warning, TEXT("ZZZ %p"), *WidgetClass);
-	UE_LOG(LogTemp, Warning, TEXT("ZZZControll %p"), PlayerController);
+	
 	auto NewWidget = CreateWidget<UBaseUserWidget>(PlayerController, WidgetClass);
 	if (!NewWidget) return false;
-	UE_LOG(LogTemp, Warning, TEXT("ZZZZ"));
 
 	NewWidget->AddToViewport();
 	Widgets.Add(NewWidget->WidgetName, NewWidget);
-	UE_LOG(LogTemp, Warning, TEXT("ZZZZZ"));
 
 	if (NewWidget->bCanClose)
 	{
 		ActivityWidget = NewWidget;
 	}
 
-	SetInputSettings(true);
+	if (NewWidget->bCanBlockedInput)
+		SetInputSettings(true);
+	
 	return true;
 }
 
@@ -119,18 +117,15 @@ void UUIManager::HandleEscape_Implementation()
 
 void UUIManager::ChangeVisibilityWidget(FName WidgetName)
 {
-	UE_LOG(LogTemp, Warning, TEXT("6"));
-	
 	if (UBaseUserWidget** FoundWidget = Widgets.Find(WidgetName))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("7"));
 		if (IsValid(*FoundWidget))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("8"));
 			bool bVisible = (*FoundWidget)->IsVisible();
 			(*FoundWidget)->SetVisibility(bVisible ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
-			
-			SetInputSettings(!bVisible);
+
+			if ((*FoundWidget)->bCanBlockedInput)
+				SetInputSettings(!bVisible);
 		}
 	}
 }
@@ -141,10 +136,9 @@ UBaseUserWidget* UUIManager::GetActivityWidgetByClass(TSubclassOf<UBaseUserWidge
 	{
 		UBaseUserWidget* Widget = Pair.Value;
 		if (IsValid(Widget) && Widget->GetClass() == WidgetClass)
-		{
 			return Widget;
-		}
 	}
+	
 	return nullptr;
 }
 

@@ -35,10 +35,8 @@ void AChair::UpdateNameplate_Implementation(ACharacter* NewCharacter)
 {
 	if (!Nameplate) return;
 
-	if (NewCharacter && NewCharacter->GetPlayerState()) {
-		UE_LOG(LogTemp, Display, TEXT("1111 NewCharacter: %s"), *NewCharacter->GetPlayerState()->GetPlayerName());
+	if (NewCharacter && NewCharacter->GetPlayerState())
 		Nameplate->RenderText(NewCharacter->GetPlayerState()->GetPlayerName());
-	}
 }
 
 void AChair::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

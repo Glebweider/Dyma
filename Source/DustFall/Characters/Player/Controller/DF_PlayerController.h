@@ -7,6 +7,7 @@
 #include "InputMappingContext.h"
 #include "DF_PlayerController.generated.h"
 
+class UBaseUserWidget;
 /**
  * 
  */
@@ -22,6 +23,8 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
+	virtual void OnPossess(APawn* InPawn) override;
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
@@ -38,13 +41,19 @@ private:
 	UInputAction* LookAction;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	UInputAction* MicrophoneAction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	UInputAction* CrouchAction;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	UInputAction* PauseMenuAction;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	UInputAction* InteractAction;
 
 	/** Variables */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(Replicated)
 	ACharacter* ControlledCharacter;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
@@ -53,8 +62,12 @@ private:
 	/** Input handlers */
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
+	void StartInteract();
+	void StopInteract();
 	void StartJump();
 	void StopJump();
+	void StartMicrophone();
+	void StopMicrophone();
 	void StartCrouch();
 	void StopCrouch();
 	void PauseMenu();
