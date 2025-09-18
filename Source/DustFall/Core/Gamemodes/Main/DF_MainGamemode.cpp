@@ -7,6 +7,7 @@
 #include "DustFall/Core/GameState/DF_GameState.h"
 #include "DustFall/World/Chair/Chair.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/PlayerState.h"
 #include "Kismet/GameplayStatics.h"
 
 void ADF_MainGamemode::StartGame()
@@ -42,9 +43,8 @@ void ADF_MainGamemode::OnPostLogin(AController* NewPlayer)
 	
 	if (APawn* PlayerPawn = NewPlayer->GetPawn())
 		for (AChair* Chair : Chairs)
-			if (!Chair->GetCharacter())
+			if (!Chair->GetOwner())
 			{
-				Chair->SetCharacter(Cast<ACharacter>(PlayerPawn));
 				Chair->SetOwner(NewPlayer);
 				
 				FVector SeatPos = Chair->GetActorLocation() + FVector(0.f, 0.f, 65.f);
@@ -71,6 +71,32 @@ void ADF_MainGamemode::RestartPlayer(AController* NewPlayer)
 {
 	Super::RestartPlayer(NewPlayer);
 
+	TArray<AActor*> ChairActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AChair::StaticClass(), ChairActors);
+
+	for (AActor* ChairActor : ChairActors)
+	{
+		if (AChair* Chair = Cast<AChair>(ChairActor))
+		{
+			if (AController* Controller = Cast<AController>(Chair->GetOwner()))
+			{
+				if (ACharacter* Character = Cast<ACharacter>(Controller->GetCharacter()))
+				{
+					FString Username = Character->GetPlayerState()->GetPlayerName();
+					Chair->Server_UpdateNameplate(Username);
+					DebugPrint(GetWorld(), "Chair");
+				}
+			}
+		}
+			
+	}
+	
+	// Задаём таймер на небольшую задержку, например 0.5 секунды
+	FTimerHandle TimerHandle;
+	GetWorldTimerManager().SetTimer(TimerHandle, [this, NewPlayer]()
+	{
+		
+	}, 1.f, false); // 0.5 секунды, false = один раз
 }
 
 void ADF_MainGamemode::SetPhase(EGamePhase NewPhase, float Duration, const FTimerDelegate& NextPhaseCallback)
@@ -84,4 +110,42 @@ void ADF_MainGamemode::SetPhase(EGamePhase NewPhase, float Duration, const FTime
 		Duration,
 		false
 	);
+}
+
+void ADF_MainGamemode::DebugPrint(UWorld* World, const FString& Message)
+{
+	FString NetModeString;
+	FColor Color = FColor::Green;
+	if (World && World->GetNetMode() == NM_Client)
+	{
+		NetModeString = TEXT("[Client] ");
+	}
+	else if (World && World->GetNetMode() == NM_ListenServer)
+	{
+		NetModeString = TEXT("[ListenServer] ");
+	}
+	else if (World && World->GetNetMode() == NM_DedicatedServer)
+	{
+		NetModeString = TEXT("[DedicatedServer] ");
+	}
+	else
+	{
+		NetModeString = TEXT("[Standalone] ");
+	}
+
+	FString FinalMessage = NetModeString + Message;
+
+	if (GEngine)
+	{
+		// на экран
+		GEngine->AddOnScreenDebugMessage(
+			-1,              // Key (-1 = всегда новая строка)
+			5.f,             // Время отображения
+			Color, 
+			FinalMessage
+		);
+
+		// в лог
+		UE_LOG(LogTemp, Warning, TEXT("%s"), *FinalMessage);
+	}
 }

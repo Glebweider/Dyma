@@ -4,6 +4,7 @@
 #include "FindedSessionWidget.h"
 
 #include "Components/Button.h"
+#include "Engine/Engine.h"
 #include "Components/TextBlock.h"
 #include "DustFall/Core/GameInstance/DF_MainGameInstance.h"
 
@@ -25,12 +26,24 @@ void UFindedSessionWidget::OnJoinSessionClicked()
 
 	if (TimeSinceLastClick <= DoubleClickThreshold)
 	{
-		if (Text_SessionName)
+		
+	}
+	GEngine->AddOnScreenDebugMessage(-1, 1.5f, FColor::Emerald, TEXT("OnConnect"));
+	if (Text_SessionName)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 1.5f, FColor::Emerald, TEXT("Text_SessionName success"));
+		if (auto GameInstance = GetGameInstance<UDF_MainGameInstance>())
 		{
-			if (auto GameInstance = GetGameInstance<UDF_MainGameInstance>())
-			{
-				GameInstance->AdvancedJoinSession(Text_SessionName->GetText().ToString(), SessionIndex);
-			}
+			GEngine->AddOnScreenDebugMessage(-1, 1.5f, FColor::Emerald, TEXT("GameInstance success"));
+			GameInstance->AdvancedJoinSession(Text_SessionName->GetText().ToString(), SessionIndex);
 		}
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 1.5f, FColor::Emerald, TEXT("GameInstance error"));
+		}
+	}
+	else
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 1.5f, FColor::Emerald, TEXT("Text_SessionName error"));
 	}
 }
