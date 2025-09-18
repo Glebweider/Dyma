@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "FindSessionsCallbackProxyAdvanced.h"
-#include "DustFall/UI/Interfaces/PlayerToUIInterface.h"
 #include "DustFall/UI/Widgets/BaseUser/BaseUserWidget.h"
 #include "MainWidget.generated.h"
 
@@ -27,14 +26,14 @@ public:
 	virtual void NativeConstruct() override;
 
 protected:
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(AllowPrivateAccess="true"))
+	bool bIsCreateGame;
+	
 	/** Binds */
 	UPROPERTY(meta = (BindWidget))
-	UButton* Btn_ApplyCreateSession;
+	UButton* Btn_StartGame;
 
-	UPROPERTY(meta = (BindWidget))
-	UEditableText* EditText_CreateSessionName;
-
-	UPROPERTY(meta = (BindWidget))
+/*	UPROPERTY(meta = (BindWidget))
 	UEditableText* EditText_FindSessionName;
 
 	UPROPERTY(meta = (BindWidget))
@@ -42,7 +41,7 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UVerticalBox* VBox_FindedSessionsList;
-
+*/
 	/** Functions */
 	UFUNCTION(BlueprintCallable)
 	void StartFindSessions();
@@ -57,6 +56,7 @@ protected:
 	void OnApplyCreateSessionClicked();
 
 private:
+	
 	UPROPERTY()
 	UDF_MainGameInstance* MainGameInstance;
 

@@ -3,11 +3,7 @@
 
 #include "MainWidget.h"
 #include "Components/Button.h"
-#include "Components/CheckBox.h"
 #include "Components/EditableText.h"
-#include "Components/TextBlock.h"
-#include "Components/VerticalBox.h"
-#include "Components/WidgetSwitcher.h"
 #include "DustFall/Core/GameInstance/DF_MainGameInstance.h"
 #include "DustFall/UI/Widgets/FindedSession/FindedSessionWidget.h"
 
@@ -17,9 +13,9 @@ void UMainWidget::NativeConstruct()
 
 	MainGameInstance = GetGameInstance<UDF_MainGameInstance>();
 	
-	if (Btn_ApplyCreateSession)
+	if (Btn_StartGame)
 	{
-		Btn_ApplyCreateSession->OnClicked.AddDynamic(this, &UMainWidget::OnApplyCreateSessionClicked);
+		Btn_StartGame->OnClicked.AddDynamic(this, &UMainWidget::OnApplyCreateSessionClicked);
 	}
 
 	if (MainGameInstance)
@@ -30,28 +26,35 @@ void UMainWidget::NativeConstruct()
 
 void UMainWidget::OnApplyCreateSessionClicked()
 {
-	if (!EditText_CreateSessionName) return;
+	if (!MainGameInstance || bIsCreateGame) return;
 	
-	FText SessionName = EditText_CreateSessionName->GetText();
-	FString SessionNameStr = SessionName.ToString().TrimStartAndEnd();
-	
-	if (!SessionName.IsEmpty() && SessionNameStr.Len() >= 4 && SessionNameStr.Len() <= 16)
+	IOnlineSubsystem* OnlineSub = Online::GetSubsystem(GetWorld(), STEAM_SUBSYSTEM);
+	FString FinalSessionName;
+
+	if (OnlineSub)
 	{
-		if (MainGameInstance)
+		IOnlineIdentityPtr Identity = OnlineSub->GetIdentityInterface();
+		if (Identity.IsValid())
 		{
-			MainGameInstance->AdvancedCreateSession(SessionNameStr);
+			TSharedPtr<const FUniqueNetId> UserId = Identity->GetUniquePlayerId(0);
+			if (UserId.IsValid())
+			{
+				FString Nickname = Identity->GetPlayerNickname(0);
+				FString UniqueId = UserId->ToString();
+
+				FinalSessionName = FString::Printf(TEXT("%s - %s"), *Nickname, *UniqueId);
+			}
 		}
 	}
-	else
-	{
-		// Вывести ошибку, если имя сессии не соответствует требованиям
-		UE_LOG(LogTemp, Warning, TEXT("Имя сессии должно быть от 4 до 16 символов!"));
-	}
+
+	bIsCreateGame = true;
+	
+	MainGameInstance->AdvancedCreateSession(FinalSessionName);
 }
 
 void UMainWidget::StartFindSessions()
 {
-	if (WSwitch_FindSession && EditText_FindSessionName && MainGameInstance)
+	/*if (WSwitch_FindSession && EditText_FindSessionName && MainGameInstance)
 	{
 		FText SessionName = EditText_CreateSessionName->GetText();
 		FString SessionNameStr = SessionName.ToString().TrimStartAndEnd();
@@ -67,12 +70,12 @@ void UMainWidget::StartFindSessions()
 			FindProxySession->OnFailure.AddDynamic(this, &UMainWidget::OnFindSessionFailure);
 			FindProxySession->Activate();
 		}
-	}
+	}*/
 }
 
 void UMainWidget::OnFindSessionSuccess(const TArray<FBlueprintSessionResult>& Results)
 {
-	FString Message = FString::Printf(TEXT("Открытие карты. Найдено сессий: %d"), Results.Num());
+	/*FString Message = FString::Printf(TEXT("Открытие карты. Найдено сессий: %d"), Results.Num());
 
 	GEngine->AddOnScreenDebugMessage(
 		-1,
@@ -125,13 +128,13 @@ void UMainWidget::OnFindSessionSuccess(const TArray<FBlueprintSessionResult>& Re
 		{
 			WSwitch_FindSession->SetActiveWidgetIndex(2);
 		}
-	}
+	}*/
 }
 
 void UMainWidget::OnFindSessionFailure(const TArray<FBlueprintSessionResult>& Results)
 {
-	if (WSwitch_FindSession)
+	/*if (WSwitch_FindSession)
 	{
 		WSwitch_FindSession->SetActiveWidgetIndex(2);
-	}
+	}*/
 }

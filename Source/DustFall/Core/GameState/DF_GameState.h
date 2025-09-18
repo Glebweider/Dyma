@@ -6,9 +6,9 @@
 #include "DustFall/Core/Enums/GamePhase.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/GameState.h"
-#include "Net/UnrealNetwork.h"
 #include "DF_GameState.generated.h"
 
+struct FProjectData;
 /**
  * 
  */
@@ -20,6 +20,8 @@ class DUSTFALL_API ADF_GameState : public AGameStateBase
 	GENERATED_BODY()
 
 public:
+	TArray<FProjectData> Projects;
+	
 	UPROPERTY(BlueprintAssignable, Category="Phase")
 	FOnPhaseChanged OnPhaseChanged;
 	
@@ -51,7 +53,6 @@ public:
 	void SetMoveForCharacter(ACharacter* Character);
 
 protected:
-	UPROPERTY()
 	FTimerHandle PhaseTimer;
 
 	UFUNCTION()

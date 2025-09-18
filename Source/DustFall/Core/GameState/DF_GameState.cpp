@@ -2,6 +2,7 @@
 
 
 #include "DF_GameState.h"
+#include "Net/UnrealNetwork.h"
 
 
 void ADF_GameState::SetPhase(EGamePhase NewPhase, float Duration, UObject* TimerTarget, FName TimerFunctionName)

@@ -44,26 +44,22 @@ void ADF_PlayerCharacter::HandleMicrophone_Implementation(bool bIsNewMicrophone)
 
 void ADF_PlayerCharacter::HandleInteract_Implementation(bool bIsNewInteract)
 {
-	if (bHasVoted) return;
+	if (!bIsCastingVote)
+		GetWorldTimerManager().ClearTimer(VoteTimerHandle);
+	
+	if (bHasVoted || !HitActor) return;
 	
 	bIsCastingVote = bIsNewInteract;
-
-	if (bIsCastingVote)
-	{
-		if (auto Widget = IPlayerToUIInterface::Execute_GetUI(UIManager, "HUD"))
-			IHUDInterface::Execute_SetCastVote(Widget, true);
-		
-		GetWorldTimerManager().SetTimer(
-			VoteCastTimerHandle,
-			this,
-			&ADF_PlayerCharacter::OnVoteCast,
-			2.0f,
-			true
-		);
-	} else
-	{
-		GetWorldTimerManager().ClearTimer(VoteTimerHandle);
-	}
+	
+	if (auto Widget = IPlayerToUIInterface::Execute_GetUI(UIManager, "HUD")) 
+		IHUDInterface::Execute_SetCastVote(Widget, true);
+     		
+	GetWorldTimerManager().SetTimer(
+		VoteCastTimerHandle,
+		this,
+		&ADF_PlayerCharacter::OnVoteCast,
+		2.0f,
+		true);
 }
 
 void ADF_PlayerCharacter::OnVoteCast()
@@ -78,8 +74,8 @@ void ADF_PlayerCharacter::OnVoteCast()
 	GetWorldTimerManager().ClearTimer(VoteTimerHandle);
 
 	if (auto PS = PlayerController->GetPlayerState<ADF_PlayerState>())
-		if (auto TargetPlayerState = Cast<ACharacter>(HitActor)->GetPlayerState())
-			PS->Server_SetVote(TargetPlayerState);
+		if (auto TargetPlayerState = Cast<ACharacter>(HitActor))
+			PS->Server_SetVote(TargetPlayerState->GetPlayerState());
 }
 
 void ADF_PlayerCharacter::Multi_StartVoteRound_Implementation()

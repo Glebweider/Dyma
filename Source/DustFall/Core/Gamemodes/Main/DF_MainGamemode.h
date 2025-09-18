@@ -34,6 +34,9 @@ protected:
 	UFUNCTION()
 	void StartVotePhase();
 
+	UFUNCTION()
+	void CountVotesPhase();
+
 	UPROPERTY()
 	TArray<AChair*> Chairs;
 
