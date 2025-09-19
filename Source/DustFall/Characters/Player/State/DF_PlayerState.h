@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "DustFall/Core/Interface/GameStateInterface.h"
 #include "DustFall/Core/Structures/Project.h"
 #include "GameFramework/PlayerState.h"
 #include "DF_PlayerState.generated.h"
@@ -11,11 +12,13 @@
  * 
  */
 UCLASS()
-class DUSTFALL_API ADF_PlayerState : public APlayerState
+class DUSTFALL_API ADF_PlayerState : public APlayerState, public IGameStateInterface
 {
 	GENERATED_BODY()
 
 public:
+	virtual FProjectData GetProjectData_Implementation() override { return Project; };
+	
 	UPROPERTY(Replicated, BlueprintReadOnly, Category="Voting")
 	APlayerState* VotedForPlayer = nullptr;
 

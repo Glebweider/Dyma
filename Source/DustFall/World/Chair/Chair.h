@@ -17,7 +17,11 @@ class DUSTFALL_API AChair : public AActor
 public:
 	AChair();
 
+	UFUNCTION(Reliable, Server)
 	void StartGame();
+	
+	UFUNCTION(Reliable, NetMulticast)
+	void Multi_StartGame();
 
 	ACharacter* GetCharacter() const { return Character; }
 	void SetCharacter(ACharacter* NewCharacter);
@@ -42,4 +46,10 @@ protected:
 
 	UPROPERTY(ReplicatedUsing=OnRep_Character)
 	ACharacter* Character;
+	
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UUserWidget> WidgetLeftClass;
+	
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UUserWidget> WidgetRightClass;
 };

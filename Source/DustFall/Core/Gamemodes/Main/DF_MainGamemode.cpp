@@ -77,16 +77,28 @@ void ADF_MainGamemode::StartGame()
 				
 				ProjectIndex++;
 			}
-
-	/*for (AChair* Chair : Chairs)
-		if (ACharacter* Character = Chair->GetCharacter())
-			Chair->*/
 }
 
 void ADF_MainGamemode::StartDocReviewPhase()
 {
+	FTimerHandle TimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(
+		TimerHandle,
+		this,
+		&ADF_MainGamemode::StartDocReviewPhaseDelayed,
+		3.0f,
+		false
+	);
+	
 	if (DF_GameState) //180
 		DF_GameState->SetPhase(EGamePhase::DocReview, 10.0f, this, FName("StartRoundsPhase"));
+}
+
+void ADF_MainGamemode::StartDocReviewPhaseDelayed()
+{
+	for (AChair* Chair : Chairs)
+		if (Chair->GetCharacter())
+			Chair->StartGame();
 }
 
 void ADF_MainGamemode::StartRoundsPhase()

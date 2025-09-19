@@ -2,6 +2,8 @@
 
 
 #include "Chair.h"
+#include "Blueprint/UserWidget.h"
+#include "DustFall/World/Book/Book.h"
 #include "DustFall/World/Nameplate/Nameplate.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/PlayerState.h"
@@ -13,9 +15,20 @@ AChair::AChair()
 	PrimaryActorTick.bCanEverTick = false;
 }
 
-void AChair::StartGame()
+void AChair::Multi_StartGame_Implementation()
 {
+	if (Book && WidgetLeftClass && WidgetRightClass) {
+		if (auto PC = Cast<APlayerController>(GetOwner()))
+			if (PC->IsLocalController())
+				Book->SetSecondPages(WidgetLeftClass, WidgetRightClass, PC);
+		
+		Book->OpenBookAndPage(EBookPage::OpenSecondPage);
+	}
+}
 
+void AChair::StartGame_Implementation()
+{
+	Multi_StartGame();
 }
 
 void AChair::SetCharacter(ACharacter* NewCharacter)
