@@ -36,7 +36,7 @@ void ABook::SetSecondPages(TSubclassOf<UUserWidget> WidgetLeftClass, TSubclassOf
 {
 	WidgetLeft = CreateWidget<UUserWidget>(PlayerController, WidgetLeftClass);
 	WidgetRight = CreateWidget<UUserWidget>(PlayerController, WidgetRightClass);
-
+	
 	auto Widget1 = FindComponentByTag<UWidgetComponent>("Page2");
 	auto Widget2 = FindComponentByTag<UWidgetComponent>("Page3");
 	if (Widget1 && Widget2)

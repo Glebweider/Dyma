@@ -11,12 +11,30 @@ void UUserFaceSlotWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	if (Btn)
-		Btn->OnClicked.AddDynamic(this, &UUserFaceSlotWidget::OnSelectFace);
+	GEngine->AddOnScreenDebugMessage(
+	-1,
+	15.0f,
+	FColor::Red,
+	TEXT("1"));
+	
+	if (Btn_Slot) {
+		GEngine->AddOnScreenDebugMessage(
+-1,
+15.0f,
+FColor::Red,
+TEXT("1222222"));
+		Btn_Slot->OnClicked.AddDynamic(this, &UUserFaceSlotWidget::OnSelectFace);
+	}
 }
 
 void UUserFaceSlotWidget::OnSelectFace()
 {
+	GEngine->AddOnScreenDebugMessage(
+		-1,
+		15.0f,
+		FColor::Red,
+		TEXT("1"));
+	
 	if (auto GameInstance = GetGameInstance())
 		IGameInstanceInterface::Execute_SetPlayerFace(GameInstance, RowName);
 }

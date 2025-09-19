@@ -34,7 +34,7 @@ protected:
 	
 	/** Binds */
 	UPROPERTY(meta = (BindWidget))
-	UButton* Btn;
+	UButton* Btn_Slot;
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* Text;

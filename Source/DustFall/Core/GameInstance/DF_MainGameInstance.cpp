@@ -53,6 +53,12 @@ void UDF_MainGameInstance::InitUniquePlayerId()
 
 void UDF_MainGameInstance::SetPlayerFace_Implementation(FName NewFaceRowName)
 {
+	GEngine->AddOnScreenDebugMessage(
+	-1,
+	15.0f,
+	FColor::Red,
+	TEXT("GameInstance"));
+	
 	if (FaceRowName != NewFaceRowName)
 	{
 		FaceRowName = NewFaceRowName;
@@ -218,5 +224,5 @@ void UDF_MainGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessi
 			TEXT("Connect"));
 			
 			PC->ClientTravel(ConnectString, ETravelType::TRAVEL_Absolute);
-		}
+		}	
 }
