@@ -6,9 +6,12 @@
 #include "OnlineSubsystemUtils.h"
 #include "Camera/CameraComponent.h"
 #include "DustFall/Characters/Player/State/DF_PlayerState.h"
+#include "DustFall/Core/GameInstance/DF_MainGameInstance.h"
+#include "DustFall/Core/Structures/Face.h"
 #include "DustFall/UI/Interfaces/HUDInterface.h"
 #include "DustFall/UI/Manager/UIManager.h"
 #include "Interfaces/VoiceInterface.h"
+#include "Net/UnrealNetwork.h"
 #include "Net/VoiceConfig.h"
 
 
@@ -110,6 +113,29 @@ void ADF_PlayerCharacter::BeginPlay()
 			CharacterMaterial = UMaterialInstanceDynamic::Create(BaseMaterial, this);
 			StMesh->SetMaterial(0, CharacterMaterial);
 		}
+
+	if (auto GI = GetGameInstance<UDF_MainGameInstance>())
+	{
+		const FName RowName = GI->FaceRowName;
+		
+		if (FaceDataTable)
+		{
+			const FFaceData* FaceRow = FaceDataTable->FindRow<FFaceData>(RowName, TEXT("CharacterBeginPlay"));
+			if (FaceRow)
+			{
+				FaceOpenTexture  = FaceRow->FaceOpen;
+				FaceCloseTexture = FaceRow->FaceClose;
+
+				UE_LOG(LogTemp, Log, TEXT("Loaded FaceOpen: %s  FaceClose: %s  FaceRowName: %s"),
+					*GetNameSafe(FaceOpenTexture),
+					*GetNameSafe(FaceCloseTexture),
+					*RowName.ToString());
+				
+				if (CharacterMaterial)
+					CharacterMaterial->SetTextureParameterValue(FName("FaceTexture"), FaceCloseTexture);
+			}
+		}
+	}
 }
 
 void ADF_PlayerCharacter::StartVoteRound_Implementation()
@@ -175,8 +201,17 @@ void ADF_PlayerCharacter::ServerSetMicrophoneActive_Implementation(bool bIsActiv
 void ADF_PlayerCharacter::MulticastSetMicrophoneActive_Implementation(bool bIsActive)
 {
 	if (CharacterMaterial)
-		CharacterMaterial->SetScalarParameterValue(FName("FaceAlpha"), bIsActive ? 1.0f : 0.0f);
-	
-	if (auto Widget = IPlayerToUIInterface::Execute_GetUI(UIManager, "HUD"))
-		IHUDInterface::Execute_UpdateMicrophoneState(Widget, bIsActive);
+		CharacterMaterial->SetTextureParameterValue(FName("FaceTexture"), bIsActive ? FaceOpenTexture : FaceCloseTexture);
+
+	if (UIManager)
+		if (auto Widget = IPlayerToUIInterface::Execute_GetUI(UIManager, "HUD"))
+			IHUDInterface::Execute_UpdateMicrophoneState(Widget, bIsActive);
+}
+
+void ADF_PlayerCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ADF_PlayerCharacter, FaceOpenTexture);
+	DOREPLIFETIME(ADF_PlayerCharacter, FaceCloseTexture);
 }

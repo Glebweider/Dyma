@@ -1,0 +1,10 @@
+﻿// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "Book.h"
+
+
+ABook::ABook()
+{
+	PrimaryActorTick.bCanEverTick = false;
+}

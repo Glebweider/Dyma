@@ -9,6 +9,11 @@ void ADF_PlayerState::Server_SetVote_Implementation(APlayerState* TargetPlayer)
 	VotedForPlayer = TargetPlayer;
 }
 
+void ADF_PlayerState::SetProject(const FProjectData& InProject)
+{
+	Project = InProject;
+}
+
 void ADF_PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);

@@ -68,9 +68,19 @@ void ADF_MainGamemode::StartGame()
 
 	Request->ProcessRequest();
 
+	int32 ProjectIndex = 0;
+	
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 		if (auto PC = Cast<ADF_PlayerController>(It->Get()))
-			PC->ClientStartGame();
+			if (DF_GameState->Projects.IsValidIndex(ProjectIndex)) {
+				PC->ClientStartGame(DF_GameState->Projects[ProjectIndex]);
+				
+				ProjectIndex++;
+			}
+
+	/*for (AChair* Chair : Chairs)
+		if (ACharacter* Character = Chair->GetCharacter())
+			Chair->*/
 }
 
 void ADF_MainGamemode::StartDocReviewPhase()
@@ -212,7 +222,6 @@ void ADF_MainGamemode::OnPostLogin(AController* NewPlayer)
 	RestartPlayer(NewPlayer);
 
 	if (APawn* PlayerPawn = NewPlayer->GetPawn())
-	{
 		for (AChair* Chair : Chairs)
 		{
 			if (!Chair->GetCharacter())
@@ -238,5 +247,4 @@ void ADF_MainGamemode::OnPostLogin(AController* NewPlayer)
 				return;
 			}
 		}
-	}
 }

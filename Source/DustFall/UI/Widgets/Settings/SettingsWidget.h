@@ -14,4 +14,5 @@ UCLASS()
 class DUSTFALL_API USettingsWidget : public UUserWidget
 {
 	GENERATED_BODY()
+	
 };

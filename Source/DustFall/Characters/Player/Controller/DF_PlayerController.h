@@ -7,6 +7,7 @@
 #include "InputMappingContext.h"
 #include "DF_PlayerController.generated.h"
 
+struct FProjectData;
 class UBaseUserWidget;
 /**
  * 
@@ -18,7 +19,7 @@ class DUSTFALL_API ADF_PlayerController : public APlayerController
 
 public:
 	UFUNCTION(Client, Reliable)
-	void ClientStartGame();
+	void ClientStartGame(const FProjectData& InProject);
 
 protected:
 	virtual void BeginPlay() override;

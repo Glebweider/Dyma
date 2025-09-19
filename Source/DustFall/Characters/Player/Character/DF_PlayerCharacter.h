@@ -27,10 +27,11 @@ public:
 	virtual void HandleCrouch_Implementation(bool bIsNewCrouch) override;
 	virtual void HandleMicrophone_Implementation(bool bIsNewMicrophone) override;
 	virtual void HandleInteract_Implementation(bool bIsNewInteract) override;
-	void OnVoteCast();
+	virtual void OnVoteCast();
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	
 	UFUNCTION()
 	virtual void OnVotingTimer();
@@ -55,6 +56,15 @@ protected:
 
 	UPROPERTY()
 	APlayerController* PlayerController;
+
+	UPROPERTY(Replicated, BlueprintReadWrite, EditAnywhere)
+	UTexture2D* FaceOpenTexture;
+
+	UPROPERTY(Replicated, BlueprintReadWrite, EditAnywhere)
+	UTexture2D* FaceCloseTexture;
+
+	UPROPERTY(EditDefaultsOnly, Category="Face")
+	UDataTable* FaceDataTable;
 
 private:
 	bool bIsCastingVote;

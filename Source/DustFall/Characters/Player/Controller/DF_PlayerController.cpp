@@ -5,6 +5,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "DustFall/Characters/Player/Interfaces/InputToPlayerInterface.h"
+#include "DustFall/Characters/Player/State/DF_PlayerState.h"
 #include "DustFall/UI/Manager/UIManager.h"
 #include "DustFall/UI/Widgets/Lobby/LobbyWidget.h"
 #include "GameFramework/Character.h"
@@ -16,15 +17,9 @@ void ADF_PlayerController::BeginPlay()
 	
 	UIManager = FindComponentByClass<UUIManager>();
 	if (ULocalPlayer* LocalPlayer = GetLocalPlayer())
-	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
-		{
 			if (InputMappingContext)
-			{
 				Subsystem->AddMappingContext(InputMappingContext, 0);
-			}
-		}
-	}
 }
 
 void ADF_PlayerController::OnPossess(APawn* InPawn)
@@ -75,8 +70,11 @@ void ADF_PlayerController::SetupInputComponent()
 	}
 }
 
-void ADF_PlayerController::ClientStartGame_Implementation()
+void ADF_PlayerController::ClientStartGame_Implementation(const FProjectData& InProject)
 {
+	if (auto PS = Cast<ADF_PlayerState>(PlayerState))
+		PS->SetProject(InProject);
+	
 	if (UIManager)
 		if (auto Widget = IPlayerToUIInterface::Execute_GetUI(UIManager, "Lobby Menu"))
 			ILobbyInterface::Execute_StartGame(Widget);

@@ -4,9 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "AdvancedFriendsGameInstance.h"
-#include "BlueprintDataDefinitions.h"
+#include "DustFall/Core/Interface/GameInstanceInterface.h"
 #include "Engine/GameInstance.h"
 #include "DF_MainGameInstance.generated.h"
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FFaceRowNameChangedSignature, FName, NewFaceRowName);
 
 class UFindSessionsCallbackProxyAdvanced;
 class UCreateSessionCallbackProxyAdvanced;
@@ -15,11 +17,14 @@ class IOnlineSubsystem;
  * 
  */
 UCLASS()
-class DUSTFALL_API UDF_MainGameInstance : public UAdvancedFriendsGameInstance
+class DUSTFALL_API UDF_MainGameInstance : public UAdvancedFriendsGameInstance, public IGameInstanceInterface
 {
 	GENERATED_BODY()
 	
 public:
+	FName FaceRowName;
+	
+	FFaceRowNameChangedSignature OnFaceRowNameChanged;
 	TArray<FOnlineSessionSearchResult> OnlineSessionResults;
 	
 	UFUNCTION(BlueprintCallable)
@@ -36,6 +41,9 @@ public:
 
 	virtual void Init() override;
 	virtual void InitUniquePlayerId();
+
+	/** Interfaces */
+	virtual void SetPlayerFace_Implementation(FName NewFaceRowName) override;
 
 private:
 	IOnlineSessionPtr SessionInterface;
@@ -63,5 +71,5 @@ private:
 	UFUNCTION()
 	void OnDestroySessionFailure();
 
-	virtual void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
+	virtual void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result) override;
 };

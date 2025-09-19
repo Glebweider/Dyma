@@ -20,10 +20,10 @@ public:
 	UUIManager();
 	
 	/** Interfaces */
-	UBaseUserWidget* GetUI_Implementation(FName WidgetName) override;
-	bool ShowUI_Implementation(TSubclassOf<UBaseUserWidget> WidgetClass) override;
-	void HandleEscape_Implementation() override;
-	void ChangeVisibilityWidgetByName_Implementation(FName WidgetName) override { ChangeVisibilityWidget(WidgetName); };
+	virtual UBaseUserWidget* GetUI_Implementation(FName WidgetName) override;
+	virtual bool ShowUI_Implementation(TSubclassOf<UBaseUserWidget> WidgetClass) override;
+	virtual void HandleEscape_Implementation() override;
+	virtual void ChangeVisibilityWidgetByName_Implementation(FName WidgetName) override { ChangeVisibilityWidget(WidgetName); };
 
 protected:
 	virtual void BeginPlay() override;

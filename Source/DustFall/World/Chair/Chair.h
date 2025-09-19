@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "Chair.generated.h"
 
+class ABook;
 class ANameplate;
 
 UCLASS()
@@ -16,11 +17,16 @@ class DUSTFALL_API AChair : public AActor
 public:
 	AChair();
 
+	void StartGame();
+
 	ACharacter* GetCharacter() const { return Character; }
 	void SetCharacter(ACharacter* NewCharacter);
 
 	UPROPERTY(EditAnywhere, Replicated)
 	ANameplate* Nameplate;
+
+	UPROPERTY(EditAnywhere, Replicated)
+	ABook* Book;
 
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

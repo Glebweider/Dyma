@@ -9,6 +9,7 @@
 #include "FindSessionsCallbackProxyAdvanced.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSubsystemUtils.h"
+#include "DustFall/Save/FaceSaveGame.h"
 #include "Interfaces/OnlineSessionInterface.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -22,10 +23,20 @@ void UDF_MainGameInstance::Init()
 		SessionInterface = Subsystem->GetSessionInterface();
 
 		if (SessionInterface.IsValid())
-		{
 			OnJoinSessionCompleteDelegate = FOnJoinSessionCompleteDelegate::CreateUObject(this, &UDF_MainGameInstance::OnJoinSessionComplete);
-		}
 	}
+
+	if (UGameplayStatics::DoesSaveGameExist(TEXT("FaceSlot"), 0))
+	{
+		UFaceSaveGame* LoadObject = Cast<UFaceSaveGame>(
+			UGameplayStatics::LoadGameFromSlot(TEXT("FaceSlot"), 0)
+		);
+
+		if (LoadObject)
+			FaceRowName = LoadObject->SavedFaceRowName;
+	}
+	else
+		FaceRowName = NAME_None;
 }
 
 void UDF_MainGameInstance::InitUniquePlayerId()
@@ -37,8 +48,25 @@ void UDF_MainGameInstance::InitUniquePlayerId()
 	UAdvancedSessionsLibrary::GetUniqueNetID(PlayerController, BPUniqueNetId);
 
 	if (BPUniqueNetId.IsValid())
-	{
 		UniquePlayerNetId = UAdvancedSessionsLibrary::Conv_BPUniqueIDToUniqueNetIDRepl(BPUniqueNetId);
+}
+
+void UDF_MainGameInstance::SetPlayerFace_Implementation(FName NewFaceRowName)
+{
+	if (FaceRowName != NewFaceRowName)
+	{
+		FaceRowName = NewFaceRowName;
+		OnFaceRowNameChanged.Broadcast(NewFaceRowName);
+	}
+
+	UFaceSaveGame* SaveObject = Cast<UFaceSaveGame>(
+		UGameplayStatics::CreateSaveGameObject(UFaceSaveGame::StaticClass())
+	);
+
+	if (SaveObject)
+	{
+		SaveObject->SavedFaceRowName = FaceRowName;
+		UGameplayStatics::SaveGameToSlot(SaveObject, TEXT("FaceSlot"), 0);
 	}
 }
 
@@ -47,9 +75,7 @@ void UDF_MainGameInstance::AdvancedCreateSession(const FString& SessionName)
 	if (!SessionInterface.IsValid()) return;
 	
 	if (SessionInterface->GetNamedSession(NAME_GameSession))
-	{
 		SessionInterface->DestroySession(NAME_GameSession);
-	}
 
 	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 	if (!PlayerController) return;
@@ -89,17 +115,13 @@ void UDF_MainGameInstance::AdvancedCreateSession(const FString& SessionName)
 
 void UDF_MainGameInstance::AdvancedDestroySession()
 {
-	UE_LOG(LogTemp, Warning, TEXT("11111111111111111111"));
 	if (!SessionInterface.IsValid()) return;
-
-	UE_LOG(LogTemp, Warning, TEXT("22222222222222222222222"));
+	
 	if (SessionInterface->GetNamedSession(NAME_GameSession))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("33333333333333333333333333"));
 		UEndSessionCallbackProxy* EndSessionProxy = UEndSessionCallbackProxy::EndSession(this, UGameplayStatics::GetPlayerController(GetWorld(), 0));
 		if (!EndSessionProxy) return;
-
-		UE_LOG(LogTemp, Warning, TEXT("44444444444444444444444444"));
+		
 		EndSessionProxy->OnSuccess.AddDynamic(this, &UDF_MainGameInstance::OnDestroySessionSuccess);
 		EndSessionProxy->OnFailure.AddDynamic(this, &UDF_MainGameInstance::OnDestroySessionFailure);
 		EndSessionProxy->Activate();
@@ -176,9 +198,7 @@ void UDF_MainGameInstance::AdvancedJoinSession(const FString& SessionName, const
 
 	bool bStarted = SessionInterface->JoinSession(*UniquePlayerNetId, FName(SessionName), OnlineSessionResults[SessionIndex]);
 	if (!bStarted)
-	{
 		SessionInterface->ClearOnJoinSessionCompleteDelegate_Handle(OnJoinSessionCompleteHandle);
-	}
 }
 
 void UDF_MainGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
@@ -189,9 +209,7 @@ void UDF_MainGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessi
 
 	FString ConnectString;
 	if (SessionInterface->GetResolvedConnectString(SessionName, ConnectString))
-	{
-		APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-		if (PC)
+		if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
 		{
 			GEngine->AddOnScreenDebugMessage(
 			-1,
@@ -201,5 +219,4 @@ void UDF_MainGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessi
 			
 			PC->ClientTravel(ConnectString, ETravelType::TRAVEL_Absolute);
 		}
-	}
 }

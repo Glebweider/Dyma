@@ -13,6 +13,11 @@ AChair::AChair()
 	PrimaryActorTick.bCanEverTick = false;
 }
 
+void AChair::StartGame()
+{
+
+}
+
 void AChair::SetCharacter(ACharacter* NewCharacter)
 {
 	Character = NewCharacter;
@@ -45,4 +50,5 @@ void AChair::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePr
 
 	DOREPLIFETIME(AChair, Character);
 	DOREPLIFETIME(AChair, Nameplate);
+	DOREPLIFETIME(AChair, Book);
 }

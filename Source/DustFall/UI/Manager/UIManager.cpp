@@ -2,9 +2,8 @@
 
 
 #include "UIManager.h"
-
-#include "EnhancedInputSubsystems.h"
 #include "Blueprint/UserWidget.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 
 UUIManager::UUIManager()
@@ -148,14 +147,10 @@ void UUIManager::SetInputSettings(bool bIsUIActive)
 
 	if (ULocalPlayer* LocalPlayer = PlayerController->GetLocalPlayer())
 	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
-		{
-			if (MainInputMappingContext && PauseInputMappingContext)
-			{
-				Subsystem->RemoveMappingContext(bIsUIActive ? MainInputMappingContext : PauseInputMappingContext);
-				Subsystem->AddMappingContext(bIsUIActive ? PauseInputMappingContext : MainInputMappingContext, 0);
-			}
-		}
+		if (auto Pawn = PlayerController->GetPawn())
+			Pawn->FindComponentByClass<UCharacterMovementComponent>()->DisableMovement();
+		
+		PlayerController->SetIgnoreLookInput(bIsUIActive);
 		PlayerController->bShowMouseCursor = bIsUIActive;
 	}
 }

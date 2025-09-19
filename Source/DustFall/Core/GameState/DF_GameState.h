@@ -20,6 +20,7 @@ class DUSTFALL_API ADF_GameState : public AGameStateBase
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<FProjectData> Projects;
 	
 	UPROPERTY(BlueprintAssignable, Category="Phase")
