@@ -23,7 +23,7 @@ public:
 	ADF_PlayerCharacter();
 	
 	virtual void StartVoteRound_Implementation() override;
-	
+	virtual void KickedPlayerName_Implementation(const FString& PlayerName) override;
 	virtual void HandleCrouch_Implementation(bool bIsNewCrouch) override;
 	virtual void HandleMicrophone_Implementation(bool bIsNewMicrophone) override;
 	virtual void HandleInteract_Implementation(bool bIsNewInteract) override;

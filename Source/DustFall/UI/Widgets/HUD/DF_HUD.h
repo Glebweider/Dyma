@@ -28,6 +28,7 @@ protected:
 	virtual void SetHelpVoteTextVisible_Implementation() override;
 	virtual void SetVoteText_Implementation(const FString& NewText) override;
 	virtual void SetCastVote_Implementation(bool bIsVoteBtnPressed) override;
+	virtual void SetKickedPlayerName_Implementation(const FString& PlayerName) override;
 	virtual void UpdateVoteProgress();
 
 	FTimerHandle CountdownTimerHandle;
@@ -53,6 +54,9 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UProgressBar* ProgressBar_Vote;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* Text_KickedPlayer;
 
 	UPROPERTY(meta = (BindWidget))
 	UImage* Img_Microphone;

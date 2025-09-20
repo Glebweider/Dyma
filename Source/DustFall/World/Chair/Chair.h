@@ -33,6 +33,7 @@ public:
 	ABook* Book;
 
 protected:
+	virtual void Destroyed() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UFUNCTION()

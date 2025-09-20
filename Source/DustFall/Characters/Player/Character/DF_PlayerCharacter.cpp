@@ -146,6 +146,15 @@ void ADF_PlayerCharacter::StartVoteRound_Implementation()
 	Multi_StartVoteRound();
 }
 
+void ADF_PlayerCharacter::KickedPlayerName_Implementation(const FString& PlayerName)
+{
+	if (!UIManager) return;
+
+	if (PlayerController->IsLocalPlayerController())
+		if (auto HUDWidget = IPlayerToUIInterface::Execute_GetUI(UIManager, "HUD"))
+			IHUDInterface::Execute_SetKickedPlayerName(HUDWidget, PlayerName);
+}
+
 void ADF_PlayerCharacter::OnVotingTimer()
 {
 	UCameraComponent* CameraComponent = FindComponentByClass<UCameraComponent>();

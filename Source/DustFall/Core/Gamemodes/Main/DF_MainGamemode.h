@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "DustFall/Core/Interface/GamemodeInterface.h"
 #include "GameFramework/GameModeBase.h"
 #include "DF_MainGamemode.generated.h"
 
@@ -13,7 +14,7 @@ class AChair;
  * 
  */
 UCLASS()
-class DUSTFALL_API ADF_MainGamemode : public AGameModeBase
+class DUSTFALL_API ADF_MainGamemode : public AGameModeBase, public IGamemodeInterface
 {
 	GENERATED_BODY()
 
@@ -22,6 +23,7 @@ public:
 	virtual void OnPostLogin(AController* NewPlayer) override;
 	virtual void StartDocReviewPhase();
 	virtual void StartDocReviewPhaseDelayed();
+	virtual void AnvilOverlapPlayer_Implementation() override;
 
 protected:
 	UFUNCTION()
@@ -36,11 +38,20 @@ protected:
 	UFUNCTION()
 	void CountVotesPhase();
 
+	UFUNCTION()
+	void DelayedVotePhase();
+
 	UPROPERTY()
 	TArray<AChair*> Chairs;
 
 	UPROPERTY()
 	ADF_GameState* DF_GameState;
+
+	UPROPERTY()
+	ACharacter* KickedPlayer;
+
+	UPROPERTY(EditAnywhere, Category="Spawn")
+	TSubclassOf<AActor> AnvilClass;
 
 private:
 	void NextSpeaker();
@@ -48,8 +59,8 @@ private:
 	
 	bool bIsLobbyOpen = true;
 	
-	int32 CurrentSpeakerIndex = 0;
-	int32 CurrentRound = 0;
+	int32 CurrentSpeakerIndex;
+	int32 CurrentRound;
 	
 	TArray<ACharacter*> RoundCharacters;
 	

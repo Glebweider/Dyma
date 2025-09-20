@@ -8,6 +8,7 @@
 #include "DustFall/Characters/Player/State/DF_PlayerState.h"
 #include "DustFall/Core/GameState/DF_GameState.h"
 #include "DustFall/Core/Structures/Project.h"
+#include "DustFall/World/Bench/Bench.h"
 #include "DustFall/World/Chair/Chair.h"
 #include "GameFramework/Character.h"
 #include "Interfaces/IHttpRequest.h"
@@ -101,6 +102,41 @@ void ADF_MainGamemode::StartDocReviewPhaseDelayed()
 			Chair->StartGame();
 }
 
+void ADF_MainGamemode::AnvilOverlapPlayer_Implementation()
+{
+	if (!KickedPlayer) return;
+	
+	DF_GameState->SetMoveForCharacter(KickedPlayer);
+
+	for (AChair* Chair : Chairs)
+	{
+		if (Chair && Chair->GetCharacter() == KickedPlayer)
+		{
+			Chair->Destroy();
+			Chairs.Remove(Chair);
+			break;
+		}
+	}
+
+	TArray<AActor*> BenchActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABench::StaticClass(), BenchActors);
+	
+	for (AActor* BenchActor : BenchActors)
+	{
+		if (ABench* Bench = Cast<ABench>(BenchActor))
+			if (Bench->SeatPlayer(KickedPlayer))
+				return;
+	}
+	
+	FTimerHandle DelayHandle;
+	GetWorldTimerManager().SetTimer(DelayHandle, this, &ADF_MainGamemode::DelayedVotePhase, 3.0f, false);
+}
+
+void ADF_MainGamemode::DelayedVotePhase()
+{
+	DF_GameState->SetPhase(EGamePhase::Round, 30.0f, this, FName("StartRoundsPhase"));
+}
+
 void ADF_MainGamemode::StartRoundsPhase()
 {
 	DF_GameState->SetCurrentPhase(EGamePhase::Round);
@@ -155,8 +191,6 @@ void ADF_MainGamemode::StartVotePhase()
 {
 	DF_GameState->SetPhase(EGamePhase::Vote, 30.0f, this, FName("CountVotesPhase"));
 
-	CurrentRound++;
-
 	for (AChair* Chair : Chairs)
 		if (ACharacter* Character = Chair->GetCharacter())
 			IToPlayerInterface::Execute_StartVoteRound(Character);
@@ -164,8 +198,9 @@ void ADF_MainGamemode::StartVotePhase()
 
 void ADF_MainGamemode::CountVotesPhase()
 {
-	TMap<ADF_PlayerState*, int32> VoteCounts;
+	DF_GameState->SetCurrentPhase(EGamePhase::Elimination);
 	
+	TMap<ADF_PlayerState*, int32> VoteCounts;
 	for (AChair* Chair : Chairs)
 	{
 		if (!Chair) continue;
@@ -194,27 +229,28 @@ void ADF_MainGamemode::CountVotesPhase()
 			Leaders.Add(Pair.Key);
 	}
 
-	ADF_PlayerState* EliminatedPlayer = nullptr;
+	ADF_PlayerState* EliminatedPlayer;
 	if (Leaders.Num() == 1)
-	{
 		EliminatedPlayer = Leaders[0];
-	}
 	else
-	{
-		int32 RandomIndex = FMath::RandRange(0, Leaders.Num() - 1);
-		EliminatedPlayer = Leaders[RandomIndex];
-	}
+		EliminatedPlayer = Leaders[FMath::RandRange(0, Leaders.Num() - 1)];
 
 	if (EliminatedPlayer)
 	{
-		UE_LOG(LogTemp, Warning,
-			TEXT("Исключён игрок: %s (голосов: %d)"),
-			*EliminatedPlayer->GetPlayerName(),
-			MaxVotes
-		);
+		KickedPlayer = Cast<ACharacter>(EliminatedPlayer->GetPawn());
+		
+		FActorSpawnParameters Params;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+		FVector PlayerLocation = EliminatedPlayer->GetPawn()->GetActorLocation();
+		
+		FVector Location(PlayerLocation.X, PlayerLocation.Y, PlayerLocation.Z + 200.f);
+		FRotator Rotation = FRotator::ZeroRotator;
+		
+		GetWorld()->SpawnActor<AActor>(AnvilClass, Location, Rotation, Params);
 	}
-	
-	// DF_GameState->SetPhase(EGamePhase::Vote, 30.0f, this, FName("StartRoundsPhase"));
+
+	CurrentRound++;
 }
 
 void ADF_MainGamemode::OnPostLogin(AController* NewPlayer)

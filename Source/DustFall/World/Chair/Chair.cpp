@@ -34,7 +34,9 @@ void AChair::StartGame_Implementation()
 void AChair::SetCharacter(ACharacter* NewCharacter)
 {
 	Character = NewCharacter;
-	SetOwner(NewCharacter->GetController());
+	
+	if (NewCharacter)
+		SetOwner(NewCharacter->GetController());
 		
 	Server_UpdateNameplate(NewCharacter);
 }
@@ -55,6 +57,17 @@ void AChair::UpdateNameplate_Implementation(ACharacter* NewCharacter)
 
 	if (NewCharacter && NewCharacter->GetPlayerState())
 		Nameplate->RenderText(NewCharacter->GetPlayerState()->GetPlayerName());
+}
+
+void AChair::Destroyed()
+{
+	Super::Destroyed();
+
+	if (Nameplate)
+		Nameplate->Destroy();
+
+	if (Book)
+		Book->Destroy();
 }
 
 void AChair::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

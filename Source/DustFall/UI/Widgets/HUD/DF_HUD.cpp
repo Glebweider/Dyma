@@ -67,6 +67,12 @@ void UDF_HUD::SetCastVote_Implementation(bool bIsVoteBtnPressed)
 	);
 }
 
+void UDF_HUD::SetKickedPlayerName_Implementation(const FString& PlayerName)
+{
+	if (Text_KickedPlayer)
+		Text_KickedPlayer->SetText(FText::Format(NSLOCTEXT("HUD", "KickedPlayer", "Бюрократ {0} уволен"), FText::FromString(PlayerName)));
+}
+
 void UDF_HUD::UpdateVoteProgress()
 {
 	if (!ProgressBar_Vote) return;
@@ -98,7 +104,7 @@ void UDF_HUD::UpdateCountdown()
 
 void UDF_HUD::OnPhaseChanged(EGamePhase NewPhase, int32 RoundNumber, float Duration, ACharacter* MoveForCharacter)
 {
-	if (!Text_Phase && !Text_MoveFor && !Text_Time && !Text_Vote && !Text_HelpVote) return;
+	if (!Text_Phase && !Text_MoveFor && !Text_Time && !Text_Vote && !Text_HelpVote && !ProgressBar_Vote && !Text_KickedPlayer) return;
 
 	GetWorld()->GetTimerManager().ClearTimer(CountdownTimerHandle);
 	
@@ -107,6 +113,7 @@ void UDF_HUD::OnPhaseChanged(EGamePhase NewPhase, int32 RoundNumber, float Durat
 	Text_Vote->SetVisibility(ESlateVisibility::Collapsed);
 	Text_HelpVote->SetVisibility(ESlateVisibility::Collapsed);
 	ProgressBar_Vote->SetVisibility(ESlateVisibility::Collapsed);
+	Text_KickedPlayer->SetVisibility(ESlateVisibility::Collapsed);
 	
 	FText PhaseName;
 	switch (NewPhase)
@@ -144,7 +151,12 @@ void UDF_HUD::OnPhaseChanged(EGamePhase NewPhase, int32 RoundNumber, float Durat
 		case EGamePhase::Elimination:
 			{
 				PhaseName = FText::Format(NSLOCTEXT("HUD", "Vote", "{0}-Й КРУГ: ИТОГИ"), RoundNumber);
-					
+
+				if (MoveForCharacter)
+					if (auto PS = MoveForCharacter->GetPlayerState())
+						Text_KickedPlayer->SetText(FText::Format(NSLOCTEXT("HUD", "KickedPlayer", "Бюрократ {0} уволен"), FText::FromString(PS->GetPlayerName().Left(10))));
+						
+				Text_KickedPlayer->SetVisibility(ESlateVisibility::Visible);
 				Text_MoveFor->SetVisibility(ESlateVisibility::Collapsed);
 				Text_Time->SetVisibility(ESlateVisibility::Collapsed);
 			}
