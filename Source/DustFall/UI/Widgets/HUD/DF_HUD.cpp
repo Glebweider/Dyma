@@ -103,6 +103,7 @@ void UDF_HUD::OnPhaseChanged(EGamePhase NewPhase, int32 RoundNumber, float Durat
 	GetWorld()->GetTimerManager().ClearTimer(CountdownTimerHandle);
 	
 	Text_MoveFor->SetVisibility(ESlateVisibility::Visible);
+	Text_Time->SetVisibility(ESlateVisibility::Visible);
 	Text_Vote->SetVisibility(ESlateVisibility::Collapsed);
 	Text_HelpVote->SetVisibility(ESlateVisibility::Collapsed);
 	ProgressBar_Vote->SetVisibility(ESlateVisibility::Collapsed);
@@ -138,6 +139,14 @@ void UDF_HUD::OnPhaseChanged(EGamePhase NewPhase, int32 RoundNumber, float Durat
 				Text_MoveFor->SetVisibility(ESlateVisibility::Collapsed);
 				Text_Vote->SetVisibility(ESlateVisibility::Visible);
 				Text_HelpVote->SetVisibility(ESlateVisibility::Visible);
+			}
+			break;
+		case EGamePhase::Elimination:
+			{
+				PhaseName = FText::Format(NSLOCTEXT("HUD", "Vote", "{0}-Й КРУГ: ИТОГИ"), RoundNumber);
+					
+				Text_MoveFor->SetVisibility(ESlateVisibility::Collapsed);
+				Text_Time->SetVisibility(ESlateVisibility::Collapsed);
 			}
 			break;
 		default:

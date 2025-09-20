@@ -55,14 +55,17 @@ void ADF_PlayerCharacter::HandleInteract_Implementation(bool bIsNewInteract)
 	bIsCastingVote = bIsNewInteract;
 	
 	if (auto Widget = IPlayerToUIInterface::Execute_GetUI(UIManager, "HUD")) 
-		IHUDInterface::Execute_SetCastVote(Widget, true);
-     		
-	GetWorldTimerManager().SetTimer(
-		VoteCastTimerHandle,
-		this,
-		&ADF_PlayerCharacter::OnVoteCast,
-		2.0f,
-		true);
+		IHUDInterface::Execute_SetCastVote(Widget, bIsNewInteract);
+
+	if (bIsNewInteract)
+		GetWorldTimerManager().SetTimer(
+			VoteCastTimerHandle,
+			this,
+			&ADF_PlayerCharacter::OnVoteCast,
+			2.0f,
+			false);
+	else
+		GetWorldTimerManager().ClearTimer(VoteCastTimerHandle);
 }
 
 void ADF_PlayerCharacter::OnVoteCast()
