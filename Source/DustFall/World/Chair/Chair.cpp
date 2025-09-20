@@ -22,7 +22,7 @@ void AChair::Multi_StartGame_Implementation()
 			if (PC->IsLocalController())
 				Book->SetSecondPages(WidgetLeftClass, WidgetRightClass, PC);
 		
-		Book->OpenBookAndPage(EBookPage::OpenSecondPage);
+		Book->Server_OpenBookAndPage(EBookPage::OpenSecondPage);
 	}
 }
 

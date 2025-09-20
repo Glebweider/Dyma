@@ -15,13 +15,16 @@ class DUSTFALL_API ABook : public AActor
 public:
 	ABook();
 
-	UFUNCTION(BlueprintCallable)
-	void OpenBookAndPage(EBookPage BookPage);
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void Server_OpenBookAndPage(EBookPage BookPage);
 
 	UFUNCTION(BlueprintCallable)
 	void SetSecondPages(TSubclassOf<UUserWidget> WidgetLeftClass, TSubclassOf<UUserWidget> WidgetRightClass, APlayerController* PlayerController);
 
 protected:
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_OpenBookAndPage(EBookPage BookPage);
+	
 	UPROPERTY()
 	UUserWidget* WidgetLeft;
 

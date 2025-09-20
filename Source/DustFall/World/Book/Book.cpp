@@ -12,22 +12,27 @@ ABook::ABook()
 	PrimaryActorTick.bCanEverTick = false;
 }
 
-void ABook::OpenBookAndPage(EBookPage BookPage)
+void ABook::Server_OpenBookAndPage_Implementation(EBookPage BookPage)
+{
+	Multi_OpenBookAndPage(BookPage);
+}
+
+void ABook::Multi_OpenBookAndPage_Implementation(EBookPage BookPage)
 {
 	if (!AnimationOpenFirst && !AnimationOpenSecond && !AnimationOpenSecondPage) return;
 	
 	if (auto SM = FindComponentByClass<USkeletalMeshComponent>())
 		switch (BookPage)
 		{
-			case EBookPage::OpenFirst:
-				SM->PlayAnimation(AnimationOpenFirst, false);
-				break;
-			case EBookPage::OpenSecond:
-				SM->PlayAnimation(AnimationOpenSecond, false);
-				break;
-			case EBookPage::OpenSecondPage:
-				SM->PlayAnimation(AnimationOpenSecondPage, false);
-				break;
+		case EBookPage::OpenFirst:
+			SM->PlayAnimation(AnimationOpenFirst, false);
+			break;
+		case EBookPage::OpenSecond:
+			SM->PlayAnimation(AnimationOpenSecond, false);
+			break;
+		case EBookPage::OpenSecondPage:
+			SM->PlayAnimation(AnimationOpenSecondPage, false);
+			break;
 		}
 }
 
