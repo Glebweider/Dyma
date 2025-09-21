@@ -20,9 +20,9 @@ class DUSTFALL_API ADF_MainGamemode : public AGameModeBase, public IGamemodeInte
 
 public:
 	virtual void StartGame();
-	virtual void OnPostLogin(AController* NewPlayer) override;
 	virtual void StartDocReviewPhase();
 	virtual void StartDocReviewPhaseDelayed();
+	virtual void OnPostLogin(AController* NewPlayer) override;
 	virtual void AnvilOverlapPlayer_Implementation() override;
 
 protected:

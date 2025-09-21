@@ -4,6 +4,7 @@
 #include "Anvil.h"
 #include "Components/BoxComponent.h"
 #include "DustFall/Core/Interface/GamemodeInterface.h"
+#include "GameFramework/Character.h"
 #include "GameFramework/GameModeBase.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -25,8 +26,38 @@ void AAnvil::OnTriggerOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (bHasCrushedPlayer) return;
-	bHasCrushedPlayer = true;
-	
-	if (auto GM = (UGameplayStatics::GetGameMode(this)))
+
+	if (OtherActor && OtherActor != this && Cast<ACharacter>(OtherActor))
+	{
+		bHasCrushedPlayer = true;
+
+		FTimerHandle CrushDelayHandle;
+		GetWorldTimerManager().SetTimer(
+			CrushDelayHandle,
+			this,
+			&AAnvil::NotifyCrushAfterDelay,
+			0.04f,
+			false
+		);
+	}
+}
+
+void AAnvil::NotifyRemoveAnvilAfterDelay()
+{
+	Destroy();
+}
+
+void AAnvil::NotifyCrushAfterDelay()
+{
+	if (AGameModeBase* GM = UGameplayStatics::GetGameMode(this))
 		IGamemodeInterface::Execute_AnvilOverlapPlayer(GM);
+
+	FTimerHandle RemoveAnvilDelayHandle;
+	GetWorldTimerManager().SetTimer(
+		RemoveAnvilDelayHandle,
+		this,
+		&AAnvil::NotifyRemoveAnvilAfterDelay,
+		2.f,
+		false
+	);
 }

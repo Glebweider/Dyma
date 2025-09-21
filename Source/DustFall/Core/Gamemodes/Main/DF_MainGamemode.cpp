@@ -102,41 +102,6 @@ void ADF_MainGamemode::StartDocReviewPhaseDelayed()
 			Chair->StartGame();
 }
 
-void ADF_MainGamemode::AnvilOverlapPlayer_Implementation()
-{
-	if (!KickedPlayer) return;
-	
-	DF_GameState->SetMoveForCharacter(KickedPlayer);
-
-	for (AChair* Chair : Chairs)
-	{
-		if (Chair && Chair->GetCharacter() == KickedPlayer)
-		{
-			Chair->Destroy();
-			Chairs.Remove(Chair);
-			break;
-		}
-	}
-
-	TArray<AActor*> BenchActors;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABench::StaticClass(), BenchActors);
-	
-	for (AActor* BenchActor : BenchActors)
-	{
-		if (ABench* Bench = Cast<ABench>(BenchActor))
-			if (Bench->SeatPlayer(KickedPlayer))
-				return;
-	}
-	
-	FTimerHandle DelayHandle;
-	GetWorldTimerManager().SetTimer(DelayHandle, this, &ADF_MainGamemode::DelayedVotePhase, 3.0f, false);
-}
-
-void ADF_MainGamemode::DelayedVotePhase()
-{
-	DF_GameState->SetPhase(EGamePhase::Round, 30.0f, this, FName("StartRoundsPhase"));
-}
-
 void ADF_MainGamemode::StartRoundsPhase()
 {
 	DF_GameState->SetCurrentPhase(EGamePhase::Round);
@@ -251,6 +216,37 @@ void ADF_MainGamemode::CountVotesPhase()
 	}
 
 	CurrentRound++;
+
+	
+}
+
+void ADF_MainGamemode::AnvilOverlapPlayer_Implementation()
+{
+	if (!KickedPlayer) return;
+	
+	DF_GameState->SetMoveForCharacter(KickedPlayer);
+	for (AChair* Chair : Chairs)
+	{
+		if (Chair && Chair->GetCharacter() == KickedPlayer)
+		{
+			Chair->Destroy();
+			Chairs.Remove(Chair);
+			break;
+		}
+	}
+
+	TArray<AActor*> BenchActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABench::StaticClass(), BenchActors);
+	
+	for (AActor* BenchActor : BenchActors)
+	{
+		if (ABench* Bench = Cast<ABench>(BenchActor))
+			if (Bench->SeatPlayer(KickedPlayer))
+				break;
+	}
+	
+	FTimerHandle DelayHandle;
+	GetWorldTimerManager().SetTimer(DelayHandle, this, &ADF_MainGamemode::StartRoundsPhase, 3.0f, false);
 }
 
 void ADF_MainGamemode::OnPostLogin(AController* NewPlayer)
