@@ -10,6 +10,7 @@
 #include "DustFall/Core/Structures/Project.h"
 #include "DustFall/World/Bench/Bench.h"
 #include "DustFall/World/Chair/Chair.h"
+#include "DustFall/World/Nameplate/Nameplate.h"
 #include "GameFramework/Character.h"
 #include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
@@ -31,53 +32,44 @@ void ADF_MainGamemode::StartGame()
 	Request->SetVerb(TEXT("GET"));
 	Request->SetHeader(TEXT("User-Agent"), TEXT("UnrealEngine/5"));
 	Request->SetHeader(TEXT("Accept"), TEXT("application/json"));
+	Request->ProcessRequest();
 	
-	Request->OnProcessRequestComplete().BindLambda([this](FHttpRequestPtr Req, FHttpResponsePtr Resp, bool bWasSuccessful)
+	Request->OnProcessRequestComplete().BindLambda(
+		[this](FHttpRequestPtr Req, FHttpResponsePtr Resp, bool bWasSuccessful)
 	{
 		if (!bWasSuccessful || !Resp.IsValid()) return;
-		
-		FString ResponseStr = Resp->GetContentAsString();
-		
-		TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(ResponseStr);
+			
 		TArray<TSharedPtr<FJsonValue>> JsonArray;
-
-		if (FJsonSerializer::Deserialize(Reader, JsonArray) && JsonArray.Num() > 0)
+		if (FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Resp->GetContentAsString()), JsonArray))
 		{
 			for (auto& JsonValue : JsonArray)
 			{
-				if (!JsonValue.IsValid() || !JsonValue->AsObject().IsValid()) continue;
-
-				TSharedPtr<FJsonObject> JsonObject = JsonValue->AsObject();
-
+				if (!JsonValue.IsValid()) continue;
+				
 				FProjectData Project;
-
-				JsonObject->TryGetStringField(TEXT("status"), Project.Status);
-				JsonObject->TryGetStringField(TEXT("goal"), Project.Goal);
-				JsonObject->TryGetStringField(TEXT("consequence"), Project.Consequence);
-				JsonObject->TryGetStringField(TEXT("implementation"), Project.Implementation);
-				JsonObject->TryGetStringField(TEXT("financing"), Project.Financing);
-				JsonObject->TryGetStringField(TEXT("support"), Project.Support);
+				auto Obj = JsonValue->AsObject();
+				Obj->TryGetStringField(TEXT("status"), Project.Status);
+				Obj->TryGetStringField(TEXT("goal"), Project.Goal);
+				Obj->TryGetStringField(TEXT("consequence"), Project.Consequence);
+				Obj->TryGetStringField(TEXT("implementation"), Project.Implementation);
+				Obj->TryGetStringField(TEXT("financing"), Project.Financing);
+				Obj->TryGetStringField(TEXT("support"), Project.Support);
 
 				DF_GameState->Projects.Add(Project);
 			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Failed to parse JSON array"));
+			
+			int32 ProjectIndex = 0;
+			for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+			{
+				if (auto PC = Cast<ADF_PlayerController>(It->Get()))
+					if (DF_GameState->Projects.IsValidIndex(ProjectIndex))
+					{
+						PC->ClientStartGame(DF_GameState->Projects[ProjectIndex]);
+						ProjectIndex++;
+					}
+			}
 		}
 	});
-
-	Request->ProcessRequest();
-
-	int32 ProjectIndex = 0;
-	
-	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-		if (auto PC = Cast<ADF_PlayerController>(It->Get()))
-			if (DF_GameState->Projects.IsValidIndex(ProjectIndex)) {
-				PC->ClientStartGame(DF_GameState->Projects[ProjectIndex]);
-				
-				ProjectIndex++;
-			}
 }
 
 void ADF_MainGamemode::StartDocReviewPhase()
@@ -97,9 +89,10 @@ void ADF_MainGamemode::StartDocReviewPhase()
 
 void ADF_MainGamemode::StartDocReviewPhaseDelayed()
 {
-	for (AChair* Chair : Chairs)
-		if (Chair->GetCharacter())
+	for (AChair* Chair : Chairs) {
+		if (Chair->Character)
 			Chair->StartGame();
+	}
 }
 
 void ADF_MainGamemode::StartRoundsPhase()
@@ -109,7 +102,7 @@ void ADF_MainGamemode::StartRoundsPhase()
 
 	RoundCharacters.Empty();
 	for (AChair* Chair : Chairs)
-		if (ACharacter* Character = Chair->GetCharacter())
+		if (ACharacter* Character = Chair->Character)
 			RoundCharacters.Add(Character);
 
 	CurrentSpeakerIndex = 0;
@@ -157,7 +150,7 @@ void ADF_MainGamemode::StartVotePhase()
 	DF_GameState->SetPhase(EGamePhase::Vote, 30.0f, this, FName("CountVotesPhase"));
 
 	for (AChair* Chair : Chairs)
-		if (ACharacter* Character = Chair->GetCharacter())
+		if (ACharacter* Character = Chair->Character)
 			IToPlayerInterface::Execute_StartVoteRound(Character);
 }
 
@@ -170,7 +163,7 @@ void ADF_MainGamemode::CountVotesPhase()
 	{
 		if (!Chair) continue;
 
-		if (ACharacter* Character = Chair->GetCharacter())
+		if (ACharacter* Character = Chair->Character)
 			if (auto PS = Character->GetPlayerState<ADF_PlayerState>())
 				if (ADF_PlayerState* VotedPS = Cast<ADF_PlayerState>(PS->VotedForPlayer))
 				{
@@ -227,7 +220,7 @@ void ADF_MainGamemode::AnvilOverlapPlayer_Implementation()
 	DF_GameState->SetMoveForCharacter(KickedPlayer);
 	for (AChair* Chair : Chairs)
 	{
-		if (Chair && Chair->GetCharacter() == KickedPlayer)
+		if (Chair && Chair->Character == KickedPlayer)
 		{
 			Chair->Destroy();
 			Chairs.Remove(Chair);
@@ -249,6 +242,19 @@ void ADF_MainGamemode::AnvilOverlapPlayer_Implementation()
 	GetWorldTimerManager().SetTimer(DelayHandle, this, &ADF_MainGamemode::StartRoundsPhase, 3.0f, false);
 }
 
+void ADF_MainGamemode::Multi_UpdateNameplate_Implementation(AChair* Chair, AController* NewPlayer)
+{
+	FString PlayerName = NewPlayer->PlayerState->GetPlayerName().Left(10);
+
+	if (auto Nameplate = Chair->Nameplate)
+	{
+		Nameplate->Username = PlayerName;
+		
+		if (Nameplate->HasAuthority())
+			Nameplate->RenderText(PlayerName);
+	}
+}
+
 void ADF_MainGamemode::OnPostLogin(AController* NewPlayer)
 {
 	Super::OnPostLogin(NewPlayer);
@@ -268,9 +274,10 @@ void ADF_MainGamemode::OnPostLogin(AController* NewPlayer)
 	if (APawn* PlayerPawn = NewPlayer->GetPawn())
 		for (AChair* Chair : Chairs)
 		{
-			if (!Chair->GetCharacter())
+			if (!Chair->Character)
 			{
-				Chair->SetCharacter(Cast<ACharacter>(PlayerPawn));
+				Chair->Character = Cast<ACharacter>(PlayerPawn);
+				Chair->SetOwner(PlayerPawn->GetController());
 
 				FVector SeatPos = Chair->GetActorLocation() + FVector(0.f, 0.f, 65.f);
 				PlayerPawn->SetActorLocation(SeatPos);
@@ -291,4 +298,18 @@ void ADF_MainGamemode::OnPostLogin(AController* NewPlayer)
 				return;
 			}
 		}
+}
+
+void ADF_MainGamemode::RestartPlayer(AController* NewPlayer)
+{
+	Super::RestartPlayer(NewPlayer);
+
+	TArray<AActor*> ChairActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AChair::StaticClass(), ChairActors);
+
+	for (AActor* Chair : ChairActors)
+	{
+		if (Chair->GetOwner() == NewPlayer)
+			Multi_UpdateNameplate(Cast<AChair>(Chair), NewPlayer);
+	}
 }

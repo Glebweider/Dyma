@@ -15,6 +15,15 @@ class DUSTFALL_API ANameplate : public AActor
 
 public:
 	ANameplate();
-	
+
 	virtual void RenderText(const FString& Nickname);
+
+	UPROPERTY(ReplicatedUsing=OnRep_Username)
+	FString Username;
+
+	UFUNCTION()
+	void OnRep_Username();
+
+protected:
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 };

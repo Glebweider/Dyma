@@ -5,8 +5,6 @@
 #include "Blueprint/UserWidget.h"
 #include "DustFall/World/Book/Book.h"
 #include "DustFall/World/Nameplate/Nameplate.h"
-#include "GameFramework/Character.h"
-#include "GameFramework/PlayerState.h"
 #include "Net/UnrealNetwork.h"
 
 
@@ -29,34 +27,6 @@ void AChair::Multi_StartGame_Implementation()
 void AChair::StartGame_Implementation()
 {
 	Multi_StartGame();
-}
-
-void AChair::SetCharacter(ACharacter* NewCharacter)
-{
-	Character = NewCharacter;
-	
-	if (NewCharacter)
-		SetOwner(NewCharacter->GetController());
-		
-	Server_UpdateNameplate(NewCharacter);
-}
-
-void AChair::OnRep_Character()
-{
-	Server_UpdateNameplate(Character);
-}
-
-void AChair::Server_UpdateNameplate_Implementation(ACharacter* NewCharacter)
-{
-	UpdateNameplate(NewCharacter);
-}
-
-void AChair::UpdateNameplate_Implementation(ACharacter* NewCharacter)
-{
-	if (!Nameplate) return;
-
-	if (NewCharacter && NewCharacter->GetPlayerState())
-		Nameplate->RenderText(NewCharacter->GetPlayerState()->GetPlayerName());
 }
 
 void AChair::Destroyed()

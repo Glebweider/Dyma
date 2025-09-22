@@ -23,7 +23,11 @@ public:
 	virtual void StartDocReviewPhase();
 	virtual void StartDocReviewPhaseDelayed();
 	virtual void OnPostLogin(AController* NewPlayer) override;
+	virtual void RestartPlayer(AController* NewPlayer) override;
 	virtual void AnvilOverlapPlayer_Implementation() override;
+
+	/** Getters */
+	virtual bool GetIsLobbyOpen() { return bIsLobbyOpen;};
 
 protected:
 	UFUNCTION()
@@ -38,8 +42,8 @@ protected:
 	UFUNCTION()
 	void CountVotesPhase();
 
-	UFUNCTION()
-	void DelayedVotePhase();
+	UFUNCTION(Reliable, NetMulticast)
+	void Multi_UpdateNameplate(AChair* Chair, AController* NewPlayer);
 
 	UPROPERTY()
 	TArray<AChair*> Chairs;

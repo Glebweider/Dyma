@@ -36,7 +36,15 @@ void ULobbyWidget::OnApplyCreateSessionClicked()
 {
 	if (ADF_MainGamemode* GM = Cast<ADF_MainGamemode>(UGameplayStatics::GetGameMode(this)))
 		if (const int32 NumPlayers = GM->GetNumPlayers(); NumPlayers > 2)
-			GM->StartGame();
+			if (GM->GetIsLobbyOpen())
+			{
+				Btn_ApplyCreateSession->SetIsEnabled(false);
+				GM->StartGame();
+			}
+			else
+			{
+				Btn_ApplyCreateSession->SetIsEnabled(true);
+			}
 }
 
 void ULobbyWidget::OnExitSessionClicked()
