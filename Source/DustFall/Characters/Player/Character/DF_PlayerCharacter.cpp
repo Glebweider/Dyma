@@ -128,11 +128,6 @@ void ADF_PlayerCharacter::BeginPlay()
 			{
 				FaceOpenTexture  = FaceRow->FaceOpen;
 				FaceCloseTexture = FaceRow->FaceClose;
-
-				UE_LOG(LogTemp, Log, TEXT("Loaded FaceOpen: %s  FaceClose: %s  FaceRowName: %s"),
-					*GetNameSafe(FaceOpenTexture),
-					*GetNameSafe(FaceCloseTexture),
-					*RowName.ToString());
 				
 				if (CharacterMaterial)
 					CharacterMaterial->SetTextureParameterValue(FName("FaceTexture"), FaceCloseTexture);
