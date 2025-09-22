@@ -128,7 +128,7 @@ void UDF_HUD::OnPhaseChanged(EGamePhase NewPhase, int32 RoundNumber, float Durat
 			}
 			break;
 		case EGamePhase::RoundIntro:
-			PhaseName = NSLOCTEXT("HUD", "RoundIntro", "1-Й КРУГ: ЗНАКОМСТВА");
+			PhaseName = NSLOCTEXT("HUD", "RoundIntro", "0-Й КРУГ: ЗНАКОМСТВА");
 			break;
 		case EGamePhase::Round:
 			PhaseName = FText::Format(NSLOCTEXT("HUD", "Round", "{0}-Й КРУГ: РАСКРЫТИЕ"), RoundNumber);
@@ -142,6 +142,7 @@ void UDF_HUD::OnPhaseChanged(EGamePhase NewPhase, int32 RoundNumber, float Durat
 		case EGamePhase::Vote:
 			{
 				PhaseName = FText::Format(NSLOCTEXT("HUD", "Vote", "{0}-Й КРУГ: ГОЛОСОВАНИЕ"), RoundNumber);
+				Text_Vote->SetText(NSLOCTEXT("HUD", "VoteText", "ГОЛОС ПРОТИВ:"));
 				
 				Text_MoveFor->SetVisibility(ESlateVisibility::Collapsed);
 				Text_Vote->SetVisibility(ESlateVisibility::Visible);
