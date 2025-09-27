@@ -46,6 +46,9 @@ private:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	UInputAction* PauseMenuAction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	UInputAction* ZoomAction;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	UInputAction* InteractAction;
@@ -67,4 +70,6 @@ private:
 	void StartMicrophone();
 	void StopMicrophone();
 	void PauseMenu();
+	void StartZoom();
+	void StopZoom();
 };

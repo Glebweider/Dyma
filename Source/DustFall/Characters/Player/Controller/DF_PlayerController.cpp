@@ -62,6 +62,11 @@ void ADF_PlayerController::SetupInputComponent()
 			EnhancedInput->BindAction(InteractAction, ETriggerEvent::Started, this, &ADF_PlayerController::StartInteract);
 			EnhancedInput->BindAction(InteractAction, ETriggerEvent::Completed, this, &ADF_PlayerController::StopInteract);
 		}
+		if (ZoomAction)
+		{
+			EnhancedInput->BindAction(ZoomAction, ETriggerEvent::Started, this, &ADF_PlayerController::StartZoom);
+			EnhancedInput->BindAction(ZoomAction, ETriggerEvent::Completed, this, &ADF_PlayerController::StopZoom);
+		}
 	}
 }
 
@@ -138,6 +143,18 @@ void ADF_PlayerController::PauseMenu()
 {
 	if (UIManager)
 		IPlayerToUIInterface::Execute_HandleEscape(UIManager);
+}
+
+void ADF_PlayerController::StartZoom()
+{
+	if (ControlledCharacter)
+		IInputToPlayerInterface::Execute_HandleZoom(ControlledCharacter, true);
+}
+
+void ADF_PlayerController::StopZoom()
+{
+	if (ControlledCharacter)
+		IInputToPlayerInterface::Execute_HandleZoom(ControlledCharacter, false);
 }
 
 void ADF_PlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const

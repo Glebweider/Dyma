@@ -11,13 +11,29 @@
 #include "DustFall/UI/Interfaces/HUDInterface.h"
 #include "DustFall/UI/Manager/UIManager.h"
 #include "Interfaces/VoiceInterface.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "Net/VoiceConfig.h"
 
 
 ADF_PlayerCharacter::ADF_PlayerCharacter()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
+}
+
+void ADF_PlayerCharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	if (IsLocallyControlled())
+	{
+		UCameraComponent* CameraComponent = FindComponentByClass<UCameraComponent>();
+		if (CameraComponent)
+		{
+			float FielOfView = UKismetMathLibrary::Lerp(CameraComponent->FieldOfView, TargetFov, GetWorld()->GetDeltaSeconds() * 12.f);
+			CameraComponent->SetFieldOfView(FielOfView);
+		}
+	}
 }
 
 void ADF_PlayerCharacter::BeginPlay()
@@ -100,6 +116,11 @@ void ADF_PlayerCharacter::HandleInteract_Implementation(bool bIsNewInteract)
 	}
 	else
 		GetWorldTimerManager().ClearTimer(VoteCastTimerHandle);
+}
+
+void ADF_PlayerCharacter::HandleZoom_Implementation(bool bIsNewZoom)
+{
+	TargetFov = bIsNewZoom ? 50.f : 90.f;
 }
 
 void ADF_PlayerCharacter::OnVoteCast()

@@ -27,8 +27,10 @@ public:
 	virtual void KickedPlayerName_Implementation(const FString& PlayerName) override;
 	virtual void HandleMicrophone_Implementation(bool bIsNewMicrophone) override;
 	virtual void HandleInteract_Implementation(bool bIsNewInteract) override;
+	virtual void HandleZoom_Implementation(bool bIsNewZoom) override;
 
 protected:
+	virtual void Tick(float DeltaSeconds) override;
 	virtual void BeginPlay() override;
 	virtual void OnVoteCast();
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
@@ -69,6 +71,8 @@ protected:
 private:
 	FTimerHandle VoteTimerHandle;
 	FTimerHandle VoteCastTimerHandle;
+
+	float TargetFov = 90.f;
 
 	UPROPERTY(Replicated)
 	bool bHasVoted;
