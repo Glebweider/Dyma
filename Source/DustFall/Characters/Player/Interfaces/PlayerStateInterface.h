@@ -5,12 +5,10 @@
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
 #include "DustFall/Core/Structures/Project.h"
-#include "GameStateInterface.generated.h"
+#include "PlayerStateInterface.generated.h"
 
-class UBaseUserWidget;
-// This class does not need to be modified.
 UINTERFACE()
-class UGameStateInterface : public UInterface
+class UPlayerStateInterface : public UInterface
 {
 	GENERATED_BODY()
 };
@@ -18,11 +16,17 @@ class UGameStateInterface : public UInterface
 /**
  * 
  */
-class DUSTFALL_API IGameStateInterface
+class DUSTFALL_API IPlayerStateInterface
 {
 	GENERATED_BODY()
 
 public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
 	FProjectData GetProjectData();
+	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
+	bool GetIsParticipant();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
+	void SetIsParticipant(bool bIsNewParticipant);
 };

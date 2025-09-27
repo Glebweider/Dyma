@@ -2,7 +2,7 @@
 
 
 #include "BookGameWidget.h"
-#include "DustFall/Core/Interface/GameStateInterface.h"
+#include "DustFall/Characters/Player/Interfaces/PlayerStateInterface.h"
 #include "GameFramework/PlayerState.h"
 
 void UBookGameWidget::NativePreConstruct()
@@ -10,5 +10,5 @@ void UBookGameWidget::NativePreConstruct()
 	Super::NativeConstruct();
 
 	if (GetOwningPlayer() && GetOwningPlayer()->PlayerState)
-		Project = IGameStateInterface::Execute_GetProjectData(GetOwningPlayer()->PlayerState);
+		Project = IPlayerStateInterface::Execute_GetProjectData(GetOwningPlayer()->PlayerState);
 }

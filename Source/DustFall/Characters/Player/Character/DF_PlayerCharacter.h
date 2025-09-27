@@ -23,30 +23,30 @@ public:
 	ADF_PlayerCharacter();
 	
 	virtual void StartVoteRound_Implementation() override;
+	virtual void StopVoteRound_Implementation() override;
 	virtual void KickedPlayerName_Implementation(const FString& PlayerName) override;
-	virtual void HandleCrouch_Implementation(bool bIsNewCrouch) override;
 	virtual void HandleMicrophone_Implementation(bool bIsNewMicrophone) override;
 	virtual void HandleInteract_Implementation(bool bIsNewInteract) override;
-	virtual void OnVoteCast();
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void OnVoteCast();
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	
-	UFUNCTION()
+	UFUNCTION(NetMulticast, Reliable)
 	virtual void OnVotingTimer();
+
+	UFUNCTION(NetMulticast, Reliable)
+	virtual void Multi_StopVote();
 
 	UFUNCTION(BlueprintCallable, Category="Voice")
 	void RegisterRemoteTalker(APlayerState* RemotePlayerState);
 
 	UFUNCTION(Server, Reliable)
-	void ServerSetMicrophoneActive(bool bIsActive);
+	void Server_SetMicrophoneActive(bool bIsActive);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastSetMicrophoneActive(bool bIsActive);
-	
-	UFUNCTION(Reliable, NetMulticast)
-	virtual void Multi_StartVoteRound();
+	void Multicast_SetMicrophoneActive(bool bIsActive);
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="UI")
 	TSubclassOf<UBaseUserWidget> LobbyWidget;
@@ -67,12 +67,16 @@ protected:
 	UDataTable* FaceDataTable;
 
 private:
-	bool bIsCastingVote;
-	bool bHasVoted;
 	FTimerHandle VoteTimerHandle;
 	FTimerHandle VoteCastTimerHandle;
+
+	UPROPERTY(Replicated)
+	bool bHasVoted;
+
+	UPROPERTY(Replicated)
+	bool bIsCastingVote;
 	
-	UPROPERTY()
+	UPROPERTY(Replicated)
 	AActor* HitActor;
 
 	UPROPERTY()

@@ -21,9 +21,6 @@ class DUSTFALL_API IInputToPlayerInterface
 
 public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
-	void HandleCrouch(bool bIsNewCrouch);
-
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
 	void HandleMicrophone(bool bIsNewMicrophone);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")

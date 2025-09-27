@@ -44,6 +44,7 @@ public:
 
 	/** Interfaces */
 	virtual void SetPlayerFace_Implementation(FName NewFaceRowName) override;
+	virtual void StartGame_Implementation() override;
 
 private:
 	IOnlineSessionPtr SessionInterface;

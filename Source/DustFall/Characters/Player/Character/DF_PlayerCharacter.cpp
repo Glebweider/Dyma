@@ -20,81 +20,6 @@ ADF_PlayerCharacter::ADF_PlayerCharacter()
 	PrimaryActorTick.bCanEverTick = false;
 }
 
-void ADF_PlayerCharacter::HandleCrouch_Implementation(bool bIsNewCrouch)
-{
-	if (bIsNewCrouch)
-		Crouch();
-	else
-		UnCrouch();
-}
-
-void ADF_PlayerCharacter::HandleMicrophone_Implementation(bool bIsNewMicrophone)
-{
-	if (IOnlineSubsystem* OSS = Online::GetSubsystem(GetWorld()))
-		if (auto Voice = OSS->GetVoiceInterface())
-			if (bIsNewMicrophone)
-			{
-				Voice->RegisterLocalTalker(0);
-				Voice->StartNetworkedVoice(0);				
-			} else
-			{
-				Voice->StopNetworkedVoice(0);
-				Voice->UnregisterLocalTalker(0);
-			}
-
-	ServerSetMicrophoneActive(bIsNewMicrophone);
-}
-
-void ADF_PlayerCharacter::HandleInteract_Implementation(bool bIsNewInteract)
-{
-	if (!bIsCastingVote)
-		GetWorldTimerManager().ClearTimer(VoteTimerHandle);
-	
-	if (bHasVoted || !HitActor) return;
-	
-	bIsCastingVote = bIsNewInteract;
-	
-	if (auto Widget = IPlayerToUIInterface::Execute_GetUI(UIManager, "HUD")) 
-		IHUDInterface::Execute_SetCastVote(Widget, bIsNewInteract);
-
-	if (bIsNewInteract)
-		GetWorldTimerManager().SetTimer(
-			VoteCastTimerHandle,
-			this,
-			&ADF_PlayerCharacter::OnVoteCast,
-			2.0f,
-			false);
-	else
-		GetWorldTimerManager().ClearTimer(VoteCastTimerHandle);
-}
-
-void ADF_PlayerCharacter::OnVoteCast()
-{
-	bHasVoted = true;
-	
-	if (auto Widget = IPlayerToUIInterface::Execute_GetUI(UIManager, "HUD")) {
-		IHUDInterface::Execute_SetCastVote(Widget, false);
-		IHUDInterface::Execute_SetHelpVoteTextVisible(Widget);
-	}
-
-	GetWorldTimerManager().ClearTimer(VoteTimerHandle);
-
-	if (auto PS = PlayerController->GetPlayerState<ADF_PlayerState>())
-		if (auto TargetPlayerState = Cast<ACharacter>(HitActor))
-			PS->Server_SetVote(TargetPlayerState->GetPlayerState());
-}
-
-void ADF_PlayerCharacter::Multi_StartVoteRound_Implementation()
-{
-	GetWorldTimerManager().SetTimer(
-		VoteTimerHandle,
-		this,
-		&ADF_PlayerCharacter::OnVotingTimer,
-		0.3f,
-		true
-	);
-}
-
 void ADF_PlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -136,9 +61,86 @@ void ADF_PlayerCharacter::BeginPlay()
 	}
 }
 
+void ADF_PlayerCharacter::HandleMicrophone_Implementation(bool bIsNewMicrophone)
+{
+	if (IOnlineSubsystem* OSS = Online::GetSubsystem(GetWorld()))
+		if (auto Voice = OSS->GetVoiceInterface())
+			if (bIsNewMicrophone)
+			{
+				Voice->RegisterLocalTalker(0);
+				Voice->StartNetworkedVoice(0);				
+			} else
+			{
+				Voice->StopNetworkedVoice(0);
+				Voice->UnregisterLocalTalker(0);
+			}
+
+	Server_SetMicrophoneActive(bIsNewMicrophone);
+}
+
+void ADF_PlayerCharacter::HandleInteract_Implementation(bool bIsNewInteract)
+{
+	if (!bIsCastingVote)
+		GetWorldTimerManager().ClearTimer(VoteTimerHandle);
+	
+	if (bHasVoted || !HitActor) return;
+	
+	bIsCastingVote = bIsNewInteract;
+	
+	if (auto Widget = IPlayerToUIInterface::Execute_GetUI(UIManager, "HUD")) 
+		IHUDInterface::Execute_SetCastVote(Widget, bIsNewInteract);
+
+	if (bIsNewInteract) {
+		GetWorldTimerManager().SetTimer(
+			VoteCastTimerHandle,
+			this,
+			&ADF_PlayerCharacter::OnVoteCast,
+			2.0f,
+			false);
+	}
+	else
+		GetWorldTimerManager().ClearTimer(VoteCastTimerHandle);
+}
+
+void ADF_PlayerCharacter::OnVoteCast()
+{
+	bHasVoted = true;
+	
+	if (auto Widget = IPlayerToUIInterface::Execute_GetUI(UIManager, "HUD")) {
+		IHUDInterface::Execute_SetCastVote(Widget, false);
+		IHUDInterface::Execute_SetHelpVoteTextVisible(Widget);
+	}
+
+	if (auto PS = PlayerController->GetPlayerState<ADF_PlayerState>())
+		if (auto TargetPlayerState = Cast<ACharacter>(HitActor))
+			PS->Server_SetVote(TargetPlayerState->GetPlayerState());
+}
+
+void ADF_PlayerCharacter::StopVoteRound_Implementation()
+{
+	GetWorldTimerManager().ClearTimer(VoteTimerHandle);
+	
+	Multi_StopVote();
+}
+
+void ADF_PlayerCharacter::Multi_StopVote_Implementation()
+{
+	bHasVoted = false;
+	bIsCastingVote = false;
+	HitActor = nullptr;
+}
+
 void ADF_PlayerCharacter::StartVoteRound_Implementation()
 {
-	Multi_StartVoteRound();
+	if (!IPlayerStateInterface::Execute_GetIsParticipant(GetPlayerState())) return;
+	
+	GetWorld()->GetTimerManager().SetTimer(
+		VoteTimerHandle,
+		this,
+		&ADF_PlayerCharacter::OnVotingTimer,
+		0.3f,
+		true
+	);
 }
 
 void ADF_PlayerCharacter::KickedPlayerName_Implementation(const FString& PlayerName)
@@ -150,8 +152,11 @@ void ADF_PlayerCharacter::KickedPlayerName_Implementation(const FString& PlayerN
 			IHUDInterface::Execute_SetKickedPlayerName(HUDWidget, PlayerName);
 }
 
-void ADF_PlayerCharacter::OnVotingTimer()
+void ADF_PlayerCharacter::OnVotingTimer_Implementation()
 {
+	if (!PlayerController)
+		PlayerController = Cast<APlayerController>(GetController());
+	
 	UCameraComponent* CameraComponent = FindComponentByClass<UCameraComponent>();
 	if (PlayerController && CameraComponent)
 	{
@@ -162,23 +167,25 @@ void ADF_PlayerCharacter::OnVotingTimer()
 		PlayerController->DeprojectScreenPositionToWorld(ViewportX / 2, ViewportY / 2, StartDirection, EndDirection);
 
 		FRotator CameraRotation = CameraComponent->GetComponentRotation();
-		FVector End = StartDirection + (CameraRotation.Vector() * 520.0f);
+		FVector End = StartDirection + (CameraRotation.Vector() * 700.0f);
 		
 		FHitResult HitResult;
 		FCollisionQueryParams CollisionParams;
 		CollisionParams.AddIgnoredActor(this);
-
+		
 		bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, StartDirection, End, ECC_Visibility, CollisionParams);
-		if (auto NewHitActor =  HitResult.GetActor(); bHit && NewHitActor)
+		if (auto NewHitActor = HitResult.GetActor(); bHit && NewHitActor)
 		{
-			if (bHasVoted || bIsCastingVote || NewHitActor == HitActor) return;
-
+			if (!NewHitActor || bHasVoted || bIsCastingVote || NewHitActor == HitActor) return;
+			
 			ACharacter* NewCharacter = Cast<ACharacter>(NewHitActor);
 			if (!NewCharacter) return;
-
+			
+			if (!IPlayerStateInterface::Execute_GetIsParticipant(NewCharacter->GetPlayerState())) return;
+			
 			auto HUDWidget = IPlayerToUIInterface::Execute_GetUI(UIManager, "HUD");
 			if (!HUDWidget) return;
-
+			
 			HitActor = NewHitActor;
 
 			if (PlayerController->IsLocalPlayerController())
@@ -200,12 +207,12 @@ void ADF_PlayerCharacter::RegisterRemoteTalker(APlayerState* RemotePlayerState)
 		}
 }
 
-void ADF_PlayerCharacter::ServerSetMicrophoneActive_Implementation(bool bIsActive)
+void ADF_PlayerCharacter::Server_SetMicrophoneActive_Implementation(bool bIsActive)
 {
-	MulticastSetMicrophoneActive(bIsActive);
+	Multicast_SetMicrophoneActive(bIsActive);
 }
 
-void ADF_PlayerCharacter::MulticastSetMicrophoneActive_Implementation(bool bIsActive)
+void ADF_PlayerCharacter::Multicast_SetMicrophoneActive_Implementation(bool bIsActive)
 {
 	if (CharacterMaterial)
 		CharacterMaterial->SetTextureParameterValue(FName("FaceTexture"), bIsActive ? FaceOpenTexture : FaceCloseTexture);
@@ -218,7 +225,10 @@ void ADF_PlayerCharacter::MulticastSetMicrophoneActive_Implementation(bool bIsAc
 void ADF_PlayerCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
+	
+	DOREPLIFETIME(ADF_PlayerCharacter, bHasVoted);
+	DOREPLIFETIME(ADF_PlayerCharacter, bIsCastingVote);
+	DOREPLIFETIME(ADF_PlayerCharacter, HitActor);
 	DOREPLIFETIME(ADF_PlayerCharacter, FaceOpenTexture);
 	DOREPLIFETIME(ADF_PlayerCharacter, FaceCloseTexture);
 }

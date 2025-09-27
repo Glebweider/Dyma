@@ -24,4 +24,7 @@ class DUSTFALL_API IGameInstanceInterface
 public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
 	void SetPlayerFace(FName NewFaceRowName);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
+	void StartGame();
 };

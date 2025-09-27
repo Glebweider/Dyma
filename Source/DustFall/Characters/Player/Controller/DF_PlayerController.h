@@ -43,9 +43,6 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	UInputAction* MicrophoneAction;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	UInputAction* CrouchAction;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	UInputAction* PauseMenuAction;
@@ -69,7 +66,5 @@ private:
 	void StopJump();
 	void StartMicrophone();
 	void StopMicrophone();
-	void StartCrouch();
-	void StopCrouch();
 	void PauseMenu();
 };

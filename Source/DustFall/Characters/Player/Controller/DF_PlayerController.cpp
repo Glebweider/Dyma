@@ -53,11 +53,6 @@ void ADF_PlayerController::SetupInputComponent()
 		{
 			EnhancedInput->BindAction(LookAction, ETriggerEvent::Triggered, this, &ADF_PlayerController::Look);
 		}
-		if (CrouchAction)
-		{
-			EnhancedInput->BindAction(CrouchAction, ETriggerEvent::Triggered, this, &ADF_PlayerController::StartCrouch);
-			EnhancedInput->BindAction(CrouchAction, ETriggerEvent::Completed, this, &ADF_PlayerController::StopCrouch);
-		}
 		if (PauseMenuAction)
 		{
 			EnhancedInput->BindAction(PauseMenuAction, ETriggerEvent::Triggered, this, &ADF_PlayerController::PauseMenu);
@@ -137,18 +132,6 @@ void ADF_PlayerController::StopMicrophone()
 {
 	if (ControlledCharacter)
 		IInputToPlayerInterface::Execute_HandleMicrophone(ControlledCharacter, false);
-}
-
-void ADF_PlayerController::StartCrouch()
-{
-	if (ControlledCharacter)
-		IInputToPlayerInterface::Execute_HandleCrouch(ControlledCharacter, true);
-}
-
-void ADF_PlayerController::StopCrouch()
-{
-	if (ControlledCharacter)
-		IInputToPlayerInterface::Execute_HandleCrouch(ControlledCharacter, false);
 }
 
 void ADF_PlayerController::PauseMenu()

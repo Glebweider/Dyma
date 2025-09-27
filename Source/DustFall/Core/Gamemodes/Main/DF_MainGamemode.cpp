@@ -3,10 +3,12 @@
 
 #include "DF_MainGamemode.h"
 #include "HttpModule.h"
+#include "OnlineSessionSettings.h"
 #include "DustFall/Characters/Player/Controller/DF_PlayerController.h"
 #include "DustFall/Characters/Player/Interfaces/ToPlayerInterface.h"
 #include "DustFall/Characters/Player/State/DF_PlayerState.h"
 #include "DustFall/Core/GameState/DF_GameState.h"
+#include "DustFall/Core/Interface/GameInstanceInterface.h"
 #include "DustFall/Core/Structures/Project.h"
 #include "DustFall/World/Bench/Bench.h"
 #include "DustFall/World/Chair/Chair.h"
@@ -21,6 +23,8 @@ void ADF_MainGamemode::StartGame()
 	bUseSeamlessTravel = false;
 	bIsLobbyOpen = false;
 	DF_GameState = GetGameState<ADF_GameState>();
+	
+	IGameInstanceInterface::Execute_StartGame(GetGameInstance());
 
 	if (!DF_GameState) return;
 
@@ -115,11 +119,11 @@ void ADF_MainGamemode::NextSpeaker()
 {
 	ACharacter* Speaker = RoundCharacters[CurrentSpeakerIndex];
 	
-	DF_GameState->SetPhaseDuration(6.f); // 30
+	DF_GameState->SetPhaseDuration(3.f); // 30
 	DF_GameState->SetMoveForCharacter(Speaker);
 	
 	GetWorldTimerManager().SetTimer(SpeakerTimer, this,
-		&ADF_MainGamemode::PauseBeforeNext, 6.f, false); // 30
+		&ADF_MainGamemode::PauseBeforeNext, 2.f, false); // 30
 }
 
 void ADF_MainGamemode::PauseBeforeNext()
@@ -149,9 +153,10 @@ void ADF_MainGamemode::StartVotePhase()
 {
 	DF_GameState->SetPhase(EGamePhase::Vote, 30.0f, this, FName("CountVotesPhase"));
 
-	for (AChair* Chair : Chairs)
+	for (AChair* Chair : Chairs) {
 		if (ACharacter* Character = Chair->Character)
 			IToPlayerInterface::Execute_StartVoteRound(Character);
+	}
 }
 
 void ADF_MainGamemode::CountVotesPhase()
@@ -169,10 +174,25 @@ void ADF_MainGamemode::CountVotesPhase()
 				{
 					int32& Count = VoteCounts.FindOrAdd(VotedPS);
 					Count++;
+					
+					PS->VotedForPlayer = nullptr;
 				}
 	}
 
-	if (VoteCounts.Num() == 0) return;
+	if (VoteCounts.Num() == 0)
+	{
+		DF_GameState->SetMoveForCharacter(nullptr);
+		
+		for (AChair* Chair : Chairs) {
+			if (ACharacter* Character = Chair->Character)
+				IToPlayerInterface::Execute_StopVoteRound(Character);
+		}
+		
+		FTimerHandle DelayHandle;
+		GetWorldTimerManager().SetTimer(DelayHandle, this, &ADF_MainGamemode::StartRoundsPhase, 3.0f, false);
+		
+		return;
+	};
 	
 	int32 MaxVotes = 0;
 	for (const auto& Pair : VoteCounts)
@@ -209,21 +229,27 @@ void ADF_MainGamemode::CountVotesPhase()
 	}
 
 	CurrentRound++;
-
-	
 }
 
 void ADF_MainGamemode::AnvilOverlapPlayer_Implementation()
 {
 	if (!KickedPlayer) return;
 	
+	for (AChair* Chair : Chairs) {
+		if (ACharacter* Character = Chair->Character)
+			IToPlayerInterface::Execute_StopVoteRound(Character);
+	}
+	
 	DF_GameState->SetMoveForCharacter(KickedPlayer);
-	for (AChair* Chair : Chairs)
+	for (int32 i = Chairs.Num() - 1; i >= 0; --i)
 	{
+		AChair* Chair = Chairs[i];
 		if (Chair && Chair->Character == KickedPlayer)
 		{
+			Multi_Partipant(KickedPlayer->GetPlayerState());
+			
+			Chairs.RemoveAt(i);
 			Chair->Destroy();
-			Chairs.Remove(Chair);
 			break;
 		}
 	}
@@ -235,11 +261,19 @@ void ADF_MainGamemode::AnvilOverlapPlayer_Implementation()
 	{
 		if (ABench* Bench = Cast<ABench>(BenchActor))
 			if (Bench->SeatPlayer(KickedPlayer))
+			{
+				KickedPlayer = nullptr;
 				break;
+			}
 	}
 	
 	FTimerHandle DelayHandle;
 	GetWorldTimerManager().SetTimer(DelayHandle, this, &ADF_MainGamemode::StartRoundsPhase, 3.0f, false);
+}
+
+void ADF_MainGamemode::Multi_Partipant_Implementation(APlayerState* PS)
+{
+	IPlayerStateInterface::Execute_SetIsParticipant(PS, false);
 }
 
 void ADF_MainGamemode::Multi_UpdateNameplate_Implementation(AChair* Chair, AController* NewPlayer)
@@ -259,15 +293,14 @@ void ADF_MainGamemode::OnPostLogin(AController* NewPlayer)
 {
 	Super::OnPostLogin(NewPlayer);
 
-	if (Chairs.Num() == 0)
-	{
-		TArray<AActor*> ChairActors;
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AChair::StaticClass(), ChairActors);
+	Chairs.Empty();
+	
+	TArray<AActor*> ChairActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AChair::StaticClass(), ChairActors);
 
-		for (AActor* ChairActor : ChairActors)
-			if (AChair* Chair = Cast<AChair>(ChairActor))
-				Chairs.Add(Chair);
-	}
+	for (AActor* ChairActor : ChairActors)
+		if (AChair* Chair = Cast<AChair>(ChairActor))
+			Chairs.Add(Chair);
 
 	RestartPlayer(NewPlayer);
 
@@ -278,6 +311,7 @@ void ADF_MainGamemode::OnPostLogin(AController* NewPlayer)
 			{
 				Chair->Character = Cast<ACharacter>(PlayerPawn);
 				Chair->SetOwner(PlayerPawn->GetController());
+				Chair->Character->SetPlayerState(NewPlayer->PlayerState);
 
 				FVector SeatPos = Chair->GetActorLocation() + FVector(0.f, 0.f, 65.f);
 				PlayerPawn->SetActorLocation(SeatPos);

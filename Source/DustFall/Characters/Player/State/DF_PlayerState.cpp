@@ -19,4 +19,5 @@ void ADF_PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ADF_PlayerState, VotedForPlayer);
+	DOREPLIFETIME(ADF_PlayerState, bIsParticipant);
 }

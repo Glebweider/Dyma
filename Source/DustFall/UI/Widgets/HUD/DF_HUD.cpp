@@ -6,6 +6,7 @@
 #include "Components/Image.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
+#include "DustFall/Characters/Player/Interfaces/PlayerStateInterface.h"
 #include "DustFall/Core/GameState/DF_GameState.h"
 #include "DustFall/UI/Widgets/FindedSession/FindedSessionWidget.h"
 #include "GameFramework/PlayerState.h"
@@ -145,17 +146,25 @@ void UDF_HUD::OnPhaseChanged(EGamePhase NewPhase, int32 RoundNumber, float Durat
 				Text_Vote->SetText(NSLOCTEXT("HUD", "VoteText", "ГОЛОС ПРОТИВ:"));
 				
 				Text_MoveFor->SetVisibility(ESlateVisibility::Collapsed);
-				Text_Vote->SetVisibility(ESlateVisibility::Visible);
-				Text_HelpVote->SetVisibility(ESlateVisibility::Visible);
+				
+				if (IPlayerStateInterface::Execute_GetIsParticipant(GetOwningPlayerPawn()->GetPlayerState()))
+				{
+					Text_Vote->SetVisibility(ESlateVisibility::Visible);
+					Text_HelpVote->SetVisibility(ESlateVisibility::Visible);					
+				}
 			}
 			break;
 		case EGamePhase::Elimination:
 			{
 				PhaseName = FText::Format(NSLOCTEXT("HUD", "Vote", "{0}-Й КРУГ: ИТОГИ"), RoundNumber);
-
-				if (MoveForCharacter)
+				
+				if (IsValid(MoveForCharacter))
+				{
 					if (auto PS = MoveForCharacter->GetPlayerState())
 						Text_KickedPlayer->SetText(FText::Format(NSLOCTEXT("HUD", "KickedPlayer", "Бюрократ {0} уволен"), FText::FromString(PS->GetPlayerName().Left(10))));
+				} else {
+					Text_KickedPlayer->SetText(NSLOCTEXT("HUD", "KickedPlayer", "Бюрократ не найден"));
+				}
 						
 				Text_KickedPlayer->SetVisibility(ESlateVisibility::Visible);
 				Text_MoveFor->SetVisibility(ESlateVisibility::Collapsed);

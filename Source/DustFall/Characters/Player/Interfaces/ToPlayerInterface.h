@@ -23,6 +23,9 @@ class DUSTFALL_API IToPlayerInterface
 public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
 	void StartVoteRound();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
+	void StopVoteRound();
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
 	void KickedPlayerName(const FString& PlayerName);

@@ -43,6 +43,9 @@ protected:
 	void CountVotesPhase();
 
 	UFUNCTION(Reliable, NetMulticast)
+	void Multi_Partipant(APlayerState* PS);
+
+	UFUNCTION(Reliable, NetMulticast)
 	void Multi_UpdateNameplate(AChair* Chair, AController* NewPlayer);
 
 	UPROPERTY()
