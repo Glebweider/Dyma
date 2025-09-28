@@ -101,13 +101,16 @@ void ADF_MainGamemode::StartDocReviewPhaseDelayed()
 
 void ADF_MainGamemode::StartRoundsPhase()
 {
-	DF_GameState->SetCurrentPhase(EGamePhase::Round);
-	DF_GameState->SetCurrentRound(CurrentRound);
-
 	RoundCharacters.Empty();
 	for (AChair* Chair : Chairs)
 		if (ACharacter* Character = Chair->Character)
 			RoundCharacters.Add(Character);
+	
+	if (RoundCharacters.Num() == 2)
+		return StartFinalVotePhase();
+		
+	DF_GameState->SetCurrentPhase(EGamePhase::Round);
+	DF_GameState->SetCurrentRound(CurrentRound);
 
 	CurrentSpeakerIndex = 0;
 
@@ -123,7 +126,7 @@ void ADF_MainGamemode::NextSpeaker()
 	DF_GameState->SetMoveForCharacter(Speaker);
 	
 	GetWorldTimerManager().SetTimer(SpeakerTimer, this,
-		&ADF_MainGamemode::PauseBeforeNext, 2.f, false); // 30
+		&ADF_MainGamemode::PauseBeforeNext, 3.f, false); // 30
 }
 
 void ADF_MainGamemode::PauseBeforeNext()
@@ -156,6 +159,70 @@ void ADF_MainGamemode::StartVotePhase()
 	for (AChair* Chair : Chairs) {
 		if (ACharacter* Character = Chair->Character)
 			IToPlayerInterface::Execute_StartVoteRound(Character);
+	}
+}
+
+void ADF_MainGamemode::StartFinalVotePhase()
+{
+	DF_GameState->SetPhase(EGamePhase::FinalVote, 20.0f, this, FName("CountFinalVotesPhase")); //120
+	
+	for (ABench* Bench : Benchs)
+	{
+		for (ACharacter* Character : Bench->GetOccupants())
+		{
+			if (Character)
+				IToPlayerInterface::Execute_StartFinalVoteRound(Character);
+		}
+	}
+}
+
+void ADF_MainGamemode::CountFinalVotesPhase()
+{
+	TMap<ADF_PlayerState*, int32> VoteCounts;
+	for (ABench* Bench : Benchs)
+	{
+		for (ACharacter* Character : Bench->GetOccupants())
+		{
+			if (!Character) continue;
+			
+			if (auto PS = Character->GetPlayerState<ADF_PlayerState>()) {
+				if (ADF_PlayerState* VotedPS = Cast<ADF_PlayerState>(PS->VotedForPlayer))
+				{
+					int32& Count = VoteCounts.FindOrAdd(VotedPS);
+					Count++;
+					
+					PS->VotedForPlayer = nullptr;
+				}
+			}
+		}
+	}
+	
+	int32 MaxVotes = 0;
+	for (const auto& Pair : VoteCounts)
+	{
+		MaxVotes = FMath::Max(MaxVotes, Pair.Value);
+	}
+	
+	TArray<ADF_PlayerState*> Leaders;
+	for (const auto& Pair : VoteCounts)
+	{
+		if (Pair.Value == MaxVotes)
+			Leaders.Add(Pair.Key);
+	}
+	
+	ADF_PlayerState* EliminatedPlayer;
+	if (Leaders.Num() == 1)
+		EliminatedPlayer = Leaders[0];
+	else
+		EliminatedPlayer = Leaders[FMath::RandRange(0, Leaders.Num() - 1)];
+	
+	if (EliminatedPlayer)
+	{
+		for (AChair* Chair : Chairs)
+		{
+			if (Chair->Character && Chair->Character->GetPlayerState() != EliminatedPlayer)
+				UE_LOG(LogTemp, Warning, TEXT("Player state win %s"), *Chair->Character->GetPlayerState()->GetPlayerName());
+		}
 	}
 }
 
@@ -216,6 +283,7 @@ void ADF_MainGamemode::CountVotesPhase()
 	if (EliminatedPlayer)
 	{
 		KickedPlayer = Cast<ACharacter>(EliminatedPlayer->GetPawn());
+		DF_GameState->SetMoveForCharacter(KickedPlayer);
 		
 		FActorSpawnParameters Params;
 		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
@@ -240,7 +308,6 @@ void ADF_MainGamemode::AnvilOverlapPlayer_Implementation()
 			IToPlayerInterface::Execute_StopVoteRound(Character);
 	}
 	
-	DF_GameState->SetMoveForCharacter(KickedPlayer);
 	for (int32 i = Chairs.Num() - 1; i >= 0; --i)
 	{
 		AChair* Chair = Chairs[i];
@@ -294,13 +361,21 @@ void ADF_MainGamemode::OnPostLogin(AController* NewPlayer)
 	Super::OnPostLogin(NewPlayer);
 
 	Chairs.Empty();
+	Benchs.Empty();
 	
 	TArray<AActor*> ChairActors;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AChair::StaticClass(), ChairActors);
 
 	for (AActor* ChairActor : ChairActors)
-		if (AChair* Chair = Cast<AChair>(ChairActor))
+		if (auto Chair = Cast<AChair>(ChairActor))
 			Chairs.Add(Chair);
+
+	TArray<AActor*> BenchActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABench::StaticClass(), BenchActors);
+
+	for (AActor* BenchActor : BenchActors)
+		if (auto Bench = Cast<ABench>(BenchActor))
+			Benchs.Add(Bench);
 
 	RestartPlayer(NewPlayer);
 

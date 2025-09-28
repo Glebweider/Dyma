@@ -12,7 +12,6 @@ enum class EGamePhase : uint8
 	Vote,               // Голосованние за исключенние игрока
 	Elimination,        // кик игрока и подведение итогов
 	RoundBreak,         // 3 мин – добровольный перерыв
-	PreFinalPause,      // 30 сек – перерыв перед финалом
 	FinalVote,          // Голосование зрителей
 	Finished            // Конец игры
 };

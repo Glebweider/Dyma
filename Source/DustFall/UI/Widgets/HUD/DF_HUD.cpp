@@ -171,6 +171,20 @@ void UDF_HUD::OnPhaseChanged(EGamePhase NewPhase, int32 RoundNumber, float Durat
 				Text_Time->SetVisibility(ESlateVisibility::Collapsed);
 			}
 			break;
+		case EGamePhase::FinalVote:
+			{
+				PhaseName = FText::Format(NSLOCTEXT("HUD", "Vote", "Финальное ГОЛОСОВАНИЕ"), RoundNumber);
+				Text_Vote->SetText(NSLOCTEXT("HUD", "VoteText", "ГОЛОС ПРОТИВ:"));
+					
+				Text_MoveFor->SetVisibility(ESlateVisibility::Collapsed);
+					
+				if (!IPlayerStateInterface::Execute_GetIsParticipant(GetOwningPlayerPawn()->GetPlayerState()))
+				{
+					Text_Vote->SetVisibility(ESlateVisibility::Visible);
+					Text_HelpVote->SetVisibility(ESlateVisibility::Visible);					
+				}
+			}
+			break;
 		default:
 			PhaseName = NSLOCTEXT("HUD", "Unknown", "Unknown");
 			break;

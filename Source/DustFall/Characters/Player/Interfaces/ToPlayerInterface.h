@@ -25,6 +25,9 @@ public:
 	void StartVoteRound();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
+	void StartFinalVoteRound();
+	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
 	void StopVoteRound();
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")

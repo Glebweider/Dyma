@@ -7,6 +7,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "DF_MainGamemode.generated.h"
 
+class ABench;
 enum class EGamePhase : uint8;
 class ADF_GameState;
 class AChair;
@@ -27,7 +28,7 @@ public:
 	virtual void AnvilOverlapPlayer_Implementation() override;
 
 	/** Getters */
-	virtual bool GetIsLobbyOpen() { return bIsLobbyOpen;};
+	virtual bool GetIsLobbyOpen() { return bIsLobbyOpen; };
 
 protected:
 	UFUNCTION()
@@ -40,7 +41,13 @@ protected:
 	void StartVotePhase();
 
 	UFUNCTION()
+	void StartFinalVotePhase();
+
+	UFUNCTION()
 	void CountVotesPhase();
+
+	UFUNCTION()
+	void CountFinalVotesPhase();
 
 	UFUNCTION(Reliable, NetMulticast)
 	void Multi_Partipant(APlayerState* PS);
@@ -50,6 +57,9 @@ protected:
 
 	UPROPERTY()
 	TArray<AChair*> Chairs;
+
+	UPROPERTY()
+	TArray<ABench*> Benchs;
 
 	UPROPERTY()
 	ADF_GameState* DF_GameState;

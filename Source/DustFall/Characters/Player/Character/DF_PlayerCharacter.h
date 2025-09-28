@@ -23,6 +23,7 @@ public:
 	ADF_PlayerCharacter();
 	
 	virtual void StartVoteRound_Implementation() override;
+	virtual void StartFinalVoteRound_Implementation() override;
 	virtual void StopVoteRound_Implementation() override;
 	virtual void KickedPlayerName_Implementation(const FString& PlayerName) override;
 	virtual void HandleMicrophone_Implementation(bool bIsNewMicrophone) override;
@@ -41,6 +42,9 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	virtual void Multi_StopVote();
 
+	UFUNCTION(NetMulticast, Reliable)
+	virtual void OnVotingFinalTimer();
+	
 	UFUNCTION(BlueprintCallable, Category="Voice")
 	void RegisterRemoteTalker(APlayerState* RemotePlayerState);
 

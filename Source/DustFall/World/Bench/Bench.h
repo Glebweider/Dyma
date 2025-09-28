@@ -14,10 +14,11 @@ class DUSTFALL_API ABench : public AActor
 public:
 	ABench();
 
+	TArray<ACharacter*> GetOccupants() { return Occupants; }
+	void LeaveSeat(ACharacter* Player);
+
 	UFUNCTION(BlueprintCallable)
 	bool SeatPlayer(ACharacter* Player);
-	
-	void LeaveSeat(ACharacter* Player);
 
 protected:
 	virtual void BeginPlay() override;

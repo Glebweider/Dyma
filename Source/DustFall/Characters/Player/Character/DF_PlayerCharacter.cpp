@@ -7,6 +7,7 @@
 #include "Camera/CameraComponent.h"
 #include "DustFall/Characters/Player/State/DF_PlayerState.h"
 #include "DustFall/Core/GameInstance/DF_MainGameInstance.h"
+#include "DustFall/Core/GameState/DF_GameState.h"
 #include "DustFall/Core/Structures/Face.h"
 #include "DustFall/UI/Interfaces/HUDInterface.h"
 #include "DustFall/UI/Manager/UIManager.h"
@@ -159,7 +160,20 @@ void ADF_PlayerCharacter::StartVoteRound_Implementation()
 		VoteTimerHandle,
 		this,
 		&ADF_PlayerCharacter::OnVotingTimer,
-		0.3f,
+		0.2f,
+		true
+	);
+}
+
+void ADF_PlayerCharacter::StartFinalVoteRound_Implementation()
+{
+	if (IPlayerStateInterface::Execute_GetIsParticipant(GetPlayerState())) return;
+	
+	GetWorld()->GetTimerManager().SetTimer(
+		VoteTimerHandle,
+		this,
+		&ADF_PlayerCharacter::OnVotingFinalTimer,
+		0.2f,
 		true
 	);
 }
@@ -215,6 +229,46 @@ void ADF_PlayerCharacter::OnVotingTimer_Implementation()
 	}
 }
 
+void ADF_PlayerCharacter::OnVotingFinalTimer_Implementation()
+{
+	if (!PlayerController) PlayerController = Cast<APlayerController>(GetController());
+	UCameraComponent* CameraComponent = FindComponentByClass<UCameraComponent>();
+	if (PlayerController && CameraComponent)
+	{
+		int32 ViewportX, ViewportY;
+		FVector StartDirection, EndDirection;
+		
+		PlayerController->GetViewportSize(ViewportX, ViewportY);
+		PlayerController->DeprojectScreenPositionToWorld(ViewportX / 2, ViewportY / 2, StartDirection, EndDirection);
+		
+		FRotator CameraRotation = CameraComponent->GetComponentRotation();
+		FVector End = StartDirection + (CameraRotation.Vector() * 1000.0f);
+		FHitResult HitResult;
+		FCollisionQueryParams CollisionParams;
+		
+		CollisionParams.AddIgnoredActor(this);
+		
+		bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, StartDirection, End, ECC_Visibility, CollisionParams);
+		if (auto NewHitActor = HitResult.GetActor(); bHit && NewHitActor)
+		{
+			if (!NewHitActor || bHasVoted || bIsCastingVote || NewHitActor == HitActor) return;
+			
+			ACharacter* NewCharacter = Cast<ACharacter>(NewHitActor);
+			if (!NewCharacter) return;
+			
+			if (!IPlayerStateInterface::Execute_GetIsParticipant(NewCharacter->GetPlayerState())) return;
+			
+			auto HUDWidget = IPlayerToUIInterface::Execute_GetUI(UIManager, "HUD");
+			if (!HUDWidget) return;
+			
+			HitActor = NewHitActor;
+			
+			if (PlayerController->IsLocalPlayerController())
+				IHUDInterface::Execute_SetVoteText(HUDWidget, NewCharacter->GetPlayerState()->GetPlayerName().Left(10));
+		}
+	}
+}
+
 void ADF_PlayerCharacter::RegisterRemoteTalker(APlayerState* RemotePlayerState)
 {
 	if (!RemotePlayerState) return;
@@ -246,10 +300,10 @@ void ADF_PlayerCharacter::Multicast_SetMicrophoneActive_Implementation(bool bIsA
 void ADF_PlayerCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	
+
+	DOREPLIFETIME(ADF_PlayerCharacter, HitActor);
 	DOREPLIFETIME(ADF_PlayerCharacter, bHasVoted);
 	DOREPLIFETIME(ADF_PlayerCharacter, bIsCastingVote);
-	DOREPLIFETIME(ADF_PlayerCharacter, HitActor);
 	DOREPLIFETIME(ADF_PlayerCharacter, FaceOpenTexture);
 	DOREPLIFETIME(ADF_PlayerCharacter, FaceCloseTexture);
 }
