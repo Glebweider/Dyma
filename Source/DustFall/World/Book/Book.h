@@ -2,7 +2,9 @@
 
 #pragma once
 
+#include "DustFall/Core/Enums/Pages.h"
 #include "CoreMinimal.h"
+#include "Components/WidgetComponent.h"
 #include "DustFall/Core/Enums/BookPage.h"
 #include "GameFramework/Actor.h"
 #include "Book.generated.h"
@@ -20,6 +22,12 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SetSecondPages(TSubclassOf<UUserWidget> WidgetLeftClass, TSubclassOf<UUserWidget> WidgetRightClass, APlayerController* PlayerController);
+
+	UFUNCTION(BlueprintCallable)
+	void ShowPages(EPages BookPage);
+
+	UFUNCTION(BlueprintCallable)
+	void AddPages(EPages BookPage, TArray<UWidgetComponent*> WidgetComponents);
 
 protected:
 	UFUNCTION(NetMulticast, Reliable)
@@ -39,4 +47,6 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category="Animation")
 	UAnimationAsset* AnimationOpenSecondPage;
+
+	TMap<EPages, TArray<UWidgetComponent*>> Pages;
 };
