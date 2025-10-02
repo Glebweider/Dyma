@@ -121,7 +121,7 @@ void ADF_PlayerCharacter::HandleInteract_Implementation(bool bIsNewInteract)
 
 void ADF_PlayerCharacter::HandleZoom_Implementation(bool bIsNewZoom)
 {
-	TargetFov = bIsNewZoom ? 50.f : 90.f;
+	TargetFov = bIsNewZoom ? 40.f : 90.f;
 }
 
 void ADF_PlayerCharacter::OnVoteCast()

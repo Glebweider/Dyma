@@ -3,7 +3,6 @@
 
 #include "DF_MainGamemode.h"
 #include "HttpModule.h"
-#include "OnlineSessionSettings.h"
 #include "DustFall/Characters/Player/Controller/DF_PlayerController.h"
 #include "DustFall/Characters/Player/Interfaces/ToPlayerInterface.h"
 #include "DustFall/Characters/Player/State/DF_PlayerState.h"
@@ -149,7 +148,7 @@ void ADF_MainGamemode::PauseBeforeNext()
 
 void ADF_MainGamemode::StartDebatPhase()
 {
-	DF_GameState->SetPhase(EGamePhase::Debate, 15.0f, this, FName("StartVotePhase")); // 120
+	DF_GameState->SetPhase(EGamePhase::Debate, 15.0f, this, FName("StartVotePhase")); // 90
 }
 
 void ADF_MainGamemode::StartVotePhase()
@@ -391,9 +390,11 @@ void ADF_MainGamemode::OnPostLogin(AController* NewPlayer)
 				FVector SeatPos = Chair->GetActorLocation() + FVector(0.f, 0.f, 65.f);
 				PlayerPawn->SetActorLocation(SeatPos);
 
-				FVector TableCenter = FVector(0.f, 0.f, SeatPos.Z);
+				FVector TableCenter = FVector(300.f, -390.f, 0.f);
 				FRotator LookAtRotation = (TableCenter - SeatPos).Rotation();
-				PlayerPawn->SetActorRotation(LookAtRotation);
+				
+				FRotator NewRotation(0.f, LookAtRotation.Yaw, 0.f);
+				PlayerPawn->SetActorRotation(NewRotation);
 
 				TArray<AActor*> CameraActors;
 				UGameplayStatics::GetAllActorsWithTag(GetWorld(), TEXT("StartCamera"), CameraActors);
