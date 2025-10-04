@@ -10,19 +10,8 @@
 void UUserFaceSlotWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-
-	GEngine->AddOnScreenDebugMessage(
-	-1,
-	15.0f,
-	FColor::Red,
-	TEXT("1"));
 	
 	if (Btn_Slot) {
-		GEngine->AddOnScreenDebugMessage(
--1,
-15.0f,
-FColor::Red,
-TEXT("1222222"));
 		Btn_Slot->OnClicked.AddDynamic(this, &UUserFaceSlotWidget::OnSelectFace);
 	}
 }

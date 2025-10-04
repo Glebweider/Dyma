@@ -12,7 +12,7 @@ public class DustFall : ModuleRules
 		{
 			"Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "UMG", "PhysicsCore", "AnimGraphRuntime",
 			"OnlineSubsystem", "OnlineSubsystemSteam", "OnlineSubsystemUtils", "AdvancedSessions",
-			"AdvancedSteamSessions", "Slate", "SlateCore", "RHI", "DLSSBlueprint", "ApplicationCore",
+			"AdvancedSteamSessions", "Slate", "SlateCore", "RHI", "ApplicationCore",
 			"HTTP", "Json", "JsonUtilities"
 		});
 	}
