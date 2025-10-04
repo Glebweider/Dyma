@@ -28,7 +28,7 @@ void ADF_PlayerCharacter::Tick(float DeltaSeconds)
 
 	if (IsLocallyControlled())
 	{
-		UCameraComponent* CameraComponent = FindComponentByClass<UCameraComponent>();
+		CameraComponent = FindComponentByClass<UCameraComponent>();
 		if (CameraComponent)
 		{
 			float FielOfView = UKismetMathLibrary::Lerp(CameraComponent->FieldOfView, TargetFov, GetWorld()->GetDeltaSeconds() * 12.f);
@@ -192,7 +192,6 @@ void ADF_PlayerCharacter::OnVotingTimer_Implementation()
 	if (!PlayerController)
 		PlayerController = Cast<APlayerController>(GetController());
 	
-	UCameraComponent* CameraComponent = FindComponentByClass<UCameraComponent>();
 	if (PlayerController && CameraComponent)
 	{
 		int32 ViewportX, ViewportY;
@@ -232,7 +231,6 @@ void ADF_PlayerCharacter::OnVotingTimer_Implementation()
 void ADF_PlayerCharacter::OnVotingFinalTimer_Implementation()
 {
 	if (!PlayerController) PlayerController = Cast<APlayerController>(GetController());
-	UCameraComponent* CameraComponent = FindComponentByClass<UCameraComponent>();
 	if (PlayerController && CameraComponent)
 	{
 		int32 ViewportX, ViewportY;
@@ -284,10 +282,10 @@ void ADF_PlayerCharacter::RegisterRemoteTalker(APlayerState* RemotePlayerState)
 
 void ADF_PlayerCharacter::Server_SetMicrophoneActive_Implementation(bool bIsActive)
 {
-	Multicast_SetMicrophoneActive(bIsActive);
+	Multi_SetMicrophoneActive(bIsActive);
 }
 
-void ADF_PlayerCharacter::Multicast_SetMicrophoneActive_Implementation(bool bIsActive)
+void ADF_PlayerCharacter::Multi_SetMicrophoneActive_Implementation(bool bIsActive)
 {
 	if (CharacterMaterial)
 		CharacterMaterial->SetTextureParameterValue(FName("FaceTexture"), bIsActive ? FaceOpenTexture : FaceCloseTexture);

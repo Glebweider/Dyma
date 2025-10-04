@@ -18,12 +18,6 @@ void UUserFaceSlotWidget::NativeConstruct()
 
 void UUserFaceSlotWidget::OnSelectFace()
 {
-	GEngine->AddOnScreenDebugMessage(
-		-1,
-		15.0f,
-		FColor::Red,
-		TEXT("1"));
-	
 	if (auto GameInstance = GetGameInstance())
 		IGameInstanceInterface::Execute_SetPlayerFace(GameInstance, RowName);
 }

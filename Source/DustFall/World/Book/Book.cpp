@@ -59,9 +59,10 @@ void ABook::ShowPages(EPages PageType)
 		for (UWidgetComponent* WidgetComponent : Page.Value)
 		{
 			if (!WidgetComponent) continue;
-
+			
 			WidgetComponent->SetVisibility(Page.Key == PageType);
 			WidgetComponent->SetCollisionProfileName(Page.Key == PageType ? FName("UI") : FName("NoCollision"));
+			WidgetComponent->SetTickMode(Page.Key == PageType ? ETickMode::Enabled : ETickMode::Disabled);
 		}
 	}
 }

@@ -8,6 +8,7 @@
 #include "GameFramework/Character.h"
 #include "DF_PlayerCharacter.generated.h"
 
+class UCameraComponent;
 class UUIManager;
 class UBaseUserWidget;
 class UMaterialInstanceDynamic;
@@ -34,34 +35,32 @@ protected:
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void BeginPlay() override;
 	virtual void OnVoteCast();
+	virtual void RegisterRemoteTalker(APlayerState* RemotePlayerState);
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	
 	UFUNCTION(NetMulticast, Reliable)
 	virtual void OnVotingTimer();
 
 	UFUNCTION(NetMulticast, Reliable)
+	virtual void OnVotingFinalTimer();
+
+	UFUNCTION(NetMulticast, Reliable)
 	virtual void Multi_StopVote();
 
 	UFUNCTION(NetMulticast, Reliable)
-	virtual void OnVotingFinalTimer();
-	
-	UFUNCTION(BlueprintCallable, Category="Voice")
-	void RegisterRemoteTalker(APlayerState* RemotePlayerState);
+	void Multi_SetMicrophoneActive(bool bIsActive);
 
 	UFUNCTION(Server, Reliable)
 	void Server_SetMicrophoneActive(bool bIsActive);
 
-	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_SetMicrophoneActive(bool bIsActive);
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="UI")
-	TSubclassOf<UBaseUserWidget> LobbyWidget;
-
 	UPROPERTY()
-	UMaterialInstanceDynamic* CharacterMaterial;
+	UCameraComponent* CameraComponent;
 
 	UPROPERTY()
 	APlayerController* PlayerController;
+
+	UPROPERTY()
+	UMaterialInstanceDynamic* CharacterMaterial;
 
 	UPROPERTY(Replicated, BlueprintReadWrite, EditAnywhere)
 	UTexture2D* FaceOpenTexture;
@@ -69,7 +68,10 @@ protected:
 	UPROPERTY(Replicated, BlueprintReadWrite, EditAnywhere)
 	UTexture2D* FaceCloseTexture;
 
-	UPROPERTY(EditDefaultsOnly, Category="Face")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="UI")
+	TSubclassOf<UBaseUserWidget> LobbyWidget;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Face")
 	UDataTable* FaceDataTable;
 
 private:
@@ -78,6 +80,9 @@ private:
 
 	float TargetFov = 90.f;
 
+	UPROPERTY()
+	UUIManager* UIManager;
+	
 	UPROPERTY(Replicated)
 	bool bHasVoted;
 
@@ -86,7 +91,4 @@ private:
 	
 	UPROPERTY(Replicated)
 	AActor* HitActor;
-
-	UPROPERTY()
-	UUIManager* UIManager;
 };
