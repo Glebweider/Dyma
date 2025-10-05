@@ -69,10 +69,10 @@ protected:
 	UPROPERTY()
 	UMaterialInstanceDynamic* CharacterMaterial;
 
-	UPROPERTY(Replicated, BlueprintReadWrite, EditAnywhere)
+	UPROPERTY(Replicated)
 	UTexture2D* FaceOpenTexture;
 
-	UPROPERTY(Replicated, BlueprintReadWrite, EditAnywhere)
+	UPROPERTY(Replicated)
 	UTexture2D* FaceCloseTexture;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="UI")
