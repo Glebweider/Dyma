@@ -20,59 +20,64 @@
 void ADF_MainGamemode::StartGame()
 {
 	bUseSeamlessTravel = false;
-	bIsLobbyOpen = false;
 	DF_GameState = GetGameState<ADF_GameState>();
-	
-	IGameInstanceInterface::Execute_StartGame(GetGameInstance());
 
 	if (!DF_GameState) return;
 
+	IGameInstanceInterface::Execute_StartGame(GetGameInstance());
+
 	int32 NumPlayers = GetWorld()->GetNumPlayerControllers();
-	FString Url = FString::Printf(TEXT("https://swiftlylink.ru/dymax/generate?players=%d"), NumPlayers);
-	
+	FString Url = FString::Printf(TEXT("https://swiftlylink.ru/dymax/generateTest?players=%d"), NumPlayers);
+
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
 	Request->SetURL(Url);
 	Request->SetVerb(TEXT("GET"));
 	Request->SetHeader(TEXT("User-Agent"), TEXT("UnrealEngine/5"));
 	Request->SetHeader(TEXT("Accept"), TEXT("application/json"));
-	Request->ProcessRequest();
-	
+
 	Request->OnProcessRequestComplete().BindLambda(
 		[this](FHttpRequestPtr Req, FHttpResponsePtr Resp, bool bWasSuccessful)
-	{
-		if (!bWasSuccessful || !Resp.IsValid()) return;
-			
-		TArray<TSharedPtr<FJsonValue>> JsonArray;
-		if (FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Resp->GetContentAsString()), JsonArray))
 		{
-			for (auto& JsonValue : JsonArray)
-			{
-				if (!JsonValue.IsValid()) continue;
-				
-				FProjectData Project;
-				auto Obj = JsonValue->AsObject();
-				Obj->TryGetStringField(TEXT("status"), Project.Status);
-				Obj->TryGetStringField(TEXT("goal"), Project.Goal);
-				Obj->TryGetStringField(TEXT("consequence"), Project.Consequence);
-				Obj->TryGetStringField(TEXT("implementation"), Project.Implementation);
-				Obj->TryGetStringField(TEXT("financing"), Project.Financing);
-				Obj->TryGetStringField(TEXT("support"), Project.Support);
+			if (!bWasSuccessful) return;
+			if (!Resp.IsValid()) return;
+			if (Resp->GetResponseCode() != 200) return;
 
-				DF_GameState->Projects.Add(Project);
-			}
-			
-			int32 ProjectIndex = 0;
-			for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+			TArray<TSharedPtr<FJsonValue>> JsonArray;
+			FString JsonStr = Resp->GetContentAsString();
+
+			if (FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(JsonStr), JsonArray))
 			{
-				if (auto PC = Cast<ADF_PlayerController>(It->Get()))
-					if (DF_GameState->Projects.IsValidIndex(ProjectIndex))
-					{
-						PC->ClientStartGame(DF_GameState->Projects[ProjectIndex]);
-						ProjectIndex++;
-					}
+				for (auto& JsonValue : JsonArray)
+				{
+					if (!JsonValue.IsValid()) continue;
+
+					FProjectData Project;
+					auto Obj = JsonValue->AsObject();
+
+					Obj->TryGetStringField(TEXT("status"), Project.Status);
+					Obj->TryGetStringField(TEXT("goal"), Project.Goal);
+					Obj->TryGetStringField(TEXT("consequence"), Project.Consequence);
+					Obj->TryGetStringField(TEXT("implementation"), Project.Implementation);
+					Obj->TryGetStringField(TEXT("financing"), Project.Financing);
+					Obj->TryGetStringField(TEXT("support"), Project.Support);
+
+					DF_GameState->Projects.Add(Project);
+				}
+
+				int32 ProjectIndex = 0;
+				for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+				{
+					if (auto PC = Cast<ADF_PlayerController>(It->Get()))
+						if (DF_GameState->Projects.IsValidIndex(ProjectIndex))
+						{
+							PC->ClientStartGame(DF_GameState->Projects[ProjectIndex]);
+							ProjectIndex++;
+						}
+				}
 			}
-		}
-	});
+		});
+
+	Request->ProcessRequest();
 }
 
 void ADF_MainGamemode::StartDocReviewPhase()
@@ -209,11 +214,15 @@ void ADF_MainGamemode::CountFinalVotesPhase()
 			Leaders.Add(Pair.Key);
 	}
 	
-	ADF_PlayerState* EliminatedPlayer;
+	ADF_PlayerState* EliminatedPlayer = nullptr;
 	if (Leaders.Num() == 1)
+	{
 		EliminatedPlayer = Leaders[0];
-	else
+	}
+	else if (Leaders.Num() > 1)
+	{
 		EliminatedPlayer = Leaders[FMath::RandRange(0, Leaders.Num() - 1)];
+	}
 	
 	if (EliminatedPlayer)
 	{
@@ -273,11 +282,15 @@ void ADF_MainGamemode::CountVotesPhase()
 			Leaders.Add(Pair.Key);
 	}
 
-	ADF_PlayerState* EliminatedPlayer;
+	ADF_PlayerState* EliminatedPlayer = nullptr;
 	if (Leaders.Num() == 1)
+	{
 		EliminatedPlayer = Leaders[0];
-	else
+	}
+	else if (Leaders.Num() > 1)
+	{
 		EliminatedPlayer = Leaders[FMath::RandRange(0, Leaders.Num() - 1)];
+	}
 
 	if (EliminatedPlayer)
 	{
@@ -387,7 +400,7 @@ void ADF_MainGamemode::OnPostLogin(AController* NewPlayer)
 				Chair->SetOwner(PlayerPawn->GetController());
 				Chair->Character->SetPlayerState(NewPlayer->PlayerState);
 
-				FVector SeatPos = Chair->GetActorLocation() + FVector(0.f, 0.f, 65.f);
+				FVector SeatPos = Chair->GetActorLocation() + FVector(0.f, 0.f, 85.f);
 				PlayerPawn->SetActorLocation(SeatPos);
 
 				FVector TableCenter = FVector(300.f, -390.f, 0.f);

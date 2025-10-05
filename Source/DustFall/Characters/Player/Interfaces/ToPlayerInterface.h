@@ -32,4 +32,7 @@ public:
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
 	void KickedPlayerName(const FString& PlayerName);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
+	void ApplyFaceByRow(FName RowName);
 };

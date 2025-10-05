@@ -24,11 +24,17 @@ public:
 	UPROPERTY(Replicated, BlueprintReadOnly, Category="Voting")
 	APlayerState* VotedForPlayer = nullptr;
 
+	UPROPERTY(ReplicatedUsing=OnRep_FaceRow)
+	FName FaceRowName;
+
 	UFUNCTION(Server, Reliable)
 	void Server_SetVote(APlayerState* TargetPlayer);
 
 	UFUNCTION()
 	void SetProject(const FProjectData& InProject);
+
+	UFUNCTION()
+	void OnRep_FaceRow();
 
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;

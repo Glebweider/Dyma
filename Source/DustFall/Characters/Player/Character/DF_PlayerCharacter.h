@@ -27,6 +27,7 @@ public:
 	virtual void StartFinalVoteRound_Implementation() override;
 	virtual void StopVoteRound_Implementation() override;
 	virtual void KickedPlayerName_Implementation(const FString& PlayerName) override;
+	virtual void ApplyFaceByRow_Implementation(FName RowName) override;
 	virtual void HandleMicrophone_Implementation(bool bIsNewMicrophone) override;
 	virtual void HandleInteract_Implementation(bool bIsNewInteract) override;
 	virtual void HandleZoom_Implementation(bool bIsNewZoom) override;
@@ -50,8 +51,14 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SetMicrophoneActive(bool bIsActive);
 
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_SetFaceRow(FName RowName);
+
 	UFUNCTION(Server, Reliable)
 	void Server_SetMicrophoneActive(bool bIsActive);
+	
+	UFUNCTION(Server, Reliable)
+	void Server_SetFaceRow(FName RowName);
 
 	UPROPERTY()
 	UCameraComponent* CameraComponent;

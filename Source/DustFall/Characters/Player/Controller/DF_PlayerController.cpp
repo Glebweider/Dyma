@@ -9,6 +9,8 @@
 #include "DustFall/UI/Manager/UIManager.h"
 #include "DustFall/UI/Widgets/Lobby/LobbyWidget.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "Net/UnrealNetwork.h"
 
 void ADF_PlayerController::BeginPlay()
@@ -27,6 +29,10 @@ void ADF_PlayerController::OnPossess(APawn* InPawn)
 	Super::OnPossess(InPawn);
 	
 	ControlledCharacter = Cast<ACharacter>(InPawn);
+
+	if (ControlledCharacter)
+		if (auto Movement = ControlledCharacter->GetCharacterMovement())
+			Movement->DisableMovement();
 }
 
 void ADF_PlayerController::SetupInputComponent()
@@ -72,6 +78,11 @@ void ADF_PlayerController::SetupInputComponent()
 
 void ADF_PlayerController::ClientStartGame_Implementation(const FProjectData& InProject)
 {
+	SetIgnoreLookInput(false);
+
+	bShowMouseCursor = false;
+	SetInputMode(FInputModeGameOnly());
+	
 	if (auto PS = Cast<ADF_PlayerState>(PlayerState))
 		PS->SetProject(InProject);
 	

@@ -41,6 +41,7 @@ void ADF_PlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	CameraComponent = FindComponentByClass<UCameraComponent>();
 	PlayerController = Cast<APlayerController>(GetController());
 	if (PlayerController)
 	{
@@ -59,22 +60,39 @@ void ADF_PlayerCharacter::BeginPlay()
 			StMesh->SetMaterial(0, CharacterMaterial);
 		}
 
-	if (auto GI = GetGameInstance<UDF_MainGameInstance>())
+	if (IsLocallyControlled())
 	{
-		const FName RowName = GI->FaceRowName;
-		
-		if (FaceDataTable)
+		if (auto GI = GetGameInstance<UDF_MainGameInstance>())
 		{
-			const FFaceData* FaceRow = FaceDataTable->FindRow<FFaceData>(RowName, TEXT("CharacterBeginPlay"));
-			if (FaceRow)
-			{
-				FaceOpenTexture  = FaceRow->FaceOpen;
-				FaceCloseTexture = FaceRow->FaceClose;
-				
-				if (CharacterMaterial)
-					CharacterMaterial->SetTextureParameterValue(FName("FaceTexture"), FaceCloseTexture);
-			}
+			Server_SetFaceRow(GI->FaceRowName);
 		}
+	}
+}
+
+void ADF_PlayerCharacter::ApplyFaceByRow_Implementation(FName RowName)
+{
+	if (!FaceDataTable || RowName.IsNone()) return;
+
+	const FFaceData* FaceRow = FaceDataTable->FindRow<FFaceData>(RowName, TEXT("ApplyFaceByRow"));
+	if (FaceRow && CharacterMaterial)
+	{
+		FaceOpenTexture  = FaceRow->FaceOpen;
+		FaceCloseTexture = FaceRow->FaceClose;
+		CharacterMaterial->SetTextureParameterValue(FName("FaceTexture"), FaceCloseTexture);
+	}
+}
+
+void ADF_PlayerCharacter::Server_SetFaceRow_Implementation(FName RowName)
+{
+	Multi_SetFaceRow(RowName);
+}
+
+void ADF_PlayerCharacter::Multi_SetFaceRow_Implementation(FName RowName)
+{
+	if (auto PS = GetPlayerState<ADF_PlayerState>())
+	{
+		PS->FaceRowName = RowName;
+		PS->OnRep_FaceRow();
 	}
 }
 
@@ -121,7 +139,7 @@ void ADF_PlayerCharacter::HandleInteract_Implementation(bool bIsNewInteract)
 
 void ADF_PlayerCharacter::HandleZoom_Implementation(bool bIsNewZoom)
 {
-	TargetFov = bIsNewZoom ? 40.f : 90.f;
+	TargetFov = bIsNewZoom ? 40.f : 100.f;
 }
 
 void ADF_PlayerCharacter::OnVoteCast()

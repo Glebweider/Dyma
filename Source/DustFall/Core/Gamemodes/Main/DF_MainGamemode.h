@@ -27,9 +27,6 @@ public:
 	virtual void RestartPlayer(AController* NewPlayer) override;
 	virtual void AnvilOverlapPlayer_Implementation() override;
 
-	/** Getters */
-	virtual bool GetIsLobbyOpen() { return bIsLobbyOpen; };
-
 protected:
 	UFUNCTION()
 	void StartRoundsPhase();
@@ -73,8 +70,6 @@ protected:
 private:
 	void NextSpeaker();
 	void PauseBeforeNext();
-	
-	bool bIsLobbyOpen = true;
 	
 	int32 CurrentSpeakerIndex;
 	int32 CurrentRound;
