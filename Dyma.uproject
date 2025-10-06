@@ -5,7 +5,7 @@
 	"Description": "",
 	"Modules": [
 		{
-			"Name": "DustFall",
+			"Name": "Dyma",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
 		}
