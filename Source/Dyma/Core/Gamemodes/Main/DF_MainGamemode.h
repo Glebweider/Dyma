@@ -70,6 +70,8 @@ protected:
 private:
 	void NextSpeaker();
 	void PauseBeforeNext();
+
+	bool bGameStarted = false;
 	
 	int32 CurrentSpeakerIndex;
 	int32 CurrentRound;

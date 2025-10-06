@@ -193,8 +193,12 @@ void UDF_HUD::OnPhaseChanged(EGamePhase NewPhase, int32 RoundNumber, float Durat
 	Text_Phase->SetText(PhaseName);
 
 	if (MoveForCharacter)
+	{
 		if (auto PS = MoveForCharacter->GetPlayerState())
 			Text_MoveFor->SetText(FText::Format(NSLOCTEXT("HUD", "VoteFor", "{0}"), FText::FromString(PS->GetPlayerName().Left(10))));
+	} else {
+		Text_MoveFor->SetVisibility(ESlateVisibility::Collapsed);
+	}
 
 	if (Duration > 0.f && Text_Time->GetVisibility() == ESlateVisibility::Visible)
 	{

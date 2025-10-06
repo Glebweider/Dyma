@@ -20,6 +20,7 @@
 void ADF_MainGamemode::StartGame()
 {
 	bUseSeamlessTravel = false;
+	bGameStarted = true;
 	DF_GameState = GetGameState<ADF_GameState>();
 
 	if (!DF_GameState) return;
@@ -87,12 +88,12 @@ void ADF_MainGamemode::StartDocReviewPhase()
 		TimerHandle,
 		this,
 		&ADF_MainGamemode::StartDocReviewPhaseDelayed,
-		3.0f,
+		3.f,
 		false
 	);
 	
-	if (DF_GameState) //180
-		DF_GameState->SetPhase(EGamePhase::DocReview, 180.f, this, FName("StartRoundsPhase"));
+	if (DF_GameState) //60
+		DF_GameState->SetPhase(EGamePhase::DocReview, 60.f, this, FName("StartRoundsPhase"));
 }
 
 void ADF_MainGamemode::StartDocReviewPhaseDelayed()
@@ -126,11 +127,11 @@ void ADF_MainGamemode::NextSpeaker()
 {
 	ACharacter* Speaker = RoundCharacters[CurrentSpeakerIndex];
 	
-	DF_GameState->SetPhaseDuration(30.f); // 30
+	DF_GameState->SetPhaseDuration(35.f); // 35
 	DF_GameState->SetMoveForCharacter(Speaker);
 	
 	GetWorldTimerManager().SetTimer(SpeakerTimer, this,
-		&ADF_MainGamemode::PauseBeforeNext, 30.f, false); // 30
+		&ADF_MainGamemode::PauseBeforeNext, 35.f, false); // 35
 }
 
 void ADF_MainGamemode::PauseBeforeNext()
@@ -168,7 +169,7 @@ void ADF_MainGamemode::StartVotePhase()
 
 void ADF_MainGamemode::StartFinalVotePhase()
 {
-	DF_GameState->SetPhase(EGamePhase::FinalVote, 120.f, this, FName("CountFinalVotesPhase")); //120
+	DF_GameState->SetPhase(EGamePhase::FinalVote, 30.f, this, FName("CountFinalVotesPhase")); //30
 	
 	for (ABench* Bench : Benchs)
 	{
@@ -371,6 +372,10 @@ void ADF_MainGamemode::Multi_UpdateNameplate_Implementation(AChair* Chair, ACont
 void ADF_MainGamemode::OnPostLogin(AController* NewPlayer)
 {
 	Super::OnPostLogin(NewPlayer);
+
+	if (bGameStarted)
+		if (APlayerController* PC = Cast<APlayerController>(NewPlayer))
+			PC->ClientTravel(TEXT("/Game/Maps/LobbyMenu"), TRAVEL_Absolute);
 
 	Chairs.Empty();
 	Benchs.Empty();

@@ -2,7 +2,6 @@
 
 
 #include "DF_MainGameInstance.h"
-
 #include "AdvancedSessionsLibrary.h"
 #include "CreateSessionCallbackProxyAdvanced.h"
 #include "EndSessionCallbackProxy.h"
@@ -81,6 +80,8 @@ void UDF_MainGameInstance::StartGame_Implementation()
 	if (FOnlineSessionSettings* CurrentSettings = SessionInterface->GetSessionSettings(NAME_GameSession))
 	{
 		CurrentSettings->bAllowJoinInProgress = false;
+		CurrentSettings->bShouldAdvertise = false;
+
 		SessionInterface->UpdateSession(NAME_GameSession, *CurrentSettings, true);
 	}
 }
