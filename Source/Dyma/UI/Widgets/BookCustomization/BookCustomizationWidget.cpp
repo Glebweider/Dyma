@@ -13,7 +13,7 @@ void UBookCustomizationWidget::NativeConstruct()
 	Super::NativeConstruct();
 
 	auto PC = GetOwningPlayer();
-	if (!UniformGridPanel && !TableFaces && !UserFaceSlotWidget && !PC) return;
+	if (!UniformGridPanel || !TableFaces || !UserFaceSlotWidget || !PC) return;
 
 	auto GameInstance = Cast<UDF_MainGameInstance>(GetGameInstance());
 	if (!GameInstance) return;
@@ -21,19 +21,24 @@ void UBookCustomizationWidget::NativeConstruct()
 	UniformGridPanel->ClearChildren();
 	
 	const TArray<FName> OutRowNames = TableFaces->GetRowNames();
-	for (int i = 0; i < OutRowNames.Num(); i++)
+
+	int32 StartIndex = PageIndex * ItemsPerPage;
+	int32 EndIndex = FMath::Min(StartIndex + ItemsPerPage, OutRowNames.Num());
+
+	for (int32 i = StartIndex; i < EndIndex; i++)
 	{
 		FName RowName = OutRowNames[i];
-		
 		static const FString ContextString(TEXT("Getting FaceData Row"));
 		FFaceData* RowTable = TableFaces->FindRow<FFaceData>(RowName, ContextString);
 		if (RowTable)
+		{
 			if (auto Widget = CreateWidget<UUserFaceSlotWidget>(PC, UserFaceSlotWidget))
 			{
 				GameInstance->OnFaceRowNameChanged.AddDynamic(Widget, &UUserFaceSlotWidget::HandleFaceRowChanged);
 				
-				int32 Row = i / Columns;
-				int32 Col = i % Columns;
+				int32 LocalIndex = i - StartIndex;
+				int32 Row = LocalIndex / Columns;
+				int32 Col = LocalIndex % Columns;
 
 				Widget->SetRowName(RowName);
 				Widget->SetImage(RowTable->FaceClose);
@@ -43,5 +48,7 @@ void UBookCustomizationWidget::NativeConstruct()
 
 				UniformGridPanel->AddChildToUniformGrid(Widget, Row, Col);
 			}
+		}
 	}
 }
+

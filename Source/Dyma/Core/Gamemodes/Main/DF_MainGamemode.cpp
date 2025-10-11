@@ -358,15 +358,23 @@ void ADF_MainGamemode::Multi_Partipant_Implementation(APlayerState* PS)
 
 void ADF_MainGamemode::Multi_UpdateNameplate_Implementation(AChair* Chair, AController* NewPlayer)
 {
-	FString PlayerName = NewPlayer->PlayerState->GetPlayerName().Left(10);
+	if (!Chair || !Chair->Nameplate) return;
 
-	if (auto Nameplate = Chair->Nameplate)
+	if (!NewPlayer || !NewPlayer->PlayerState)
 	{
-		Nameplate->Username = PlayerName;
+		Chair->Nameplate->Username = TEXT("");
 		
-		if (Nameplate->HasAuthority())
-			Nameplate->RenderText(PlayerName);
+		if (Chair->Nameplate)
+			Chair->Nameplate->RenderText(TEXT(""));
+		
+		return;
 	}
+	
+	FString PlayerName = NewPlayer->PlayerState->GetPlayerName().Left(10);
+	Chair->Nameplate->Username = PlayerName;
+
+	if (Chair->Nameplate)
+		Chair->Nameplate->RenderText(PlayerName);
 }
 
 void ADF_MainGamemode::OnPostLogin(AController* NewPlayer)
@@ -439,5 +447,29 @@ void ADF_MainGamemode::RestartPlayer(AController* NewPlayer)
 	{
 		if (Chair->GetOwner() == NewPlayer)
 			Multi_UpdateNameplate(Cast<AChair>(Chair), NewPlayer);
+	}
+}
+
+void ADF_MainGamemode::Logout(AController* Exiting)
+{
+	Super::Logout(Exiting);
+	
+	TArray<AActor*> ChairActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AChair::StaticClass(), ChairActors);
+
+	for (AActor* Chair : ChairActors)
+	{
+		if (Chair->GetOwner() == Exiting)
+		{
+			Multi_UpdateNameplate(Cast<AChair>(Chair), nullptr);
+			Chair->SetOwner(nullptr);
+		}
+	}
+
+	for (int32 i = RoundCharacters.Num() - 1; i >= 0; --i)
+	{
+		ACharacter* Char = RoundCharacters[i];
+		if (Char && Char->GetController() == Exiting)
+			RoundCharacters.RemoveAt(i);
 	}
 }

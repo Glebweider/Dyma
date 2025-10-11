@@ -173,7 +173,7 @@ void UDF_HUD::OnPhaseChanged(EGamePhase NewPhase, int32 RoundNumber, float Durat
 			break;
 		case EGamePhase::FinalVote:
 			{
-				PhaseName = FText::Format(NSLOCTEXT("HUD", "Vote", "Финальное ГОЛОСОВАНИЕ"), RoundNumber);
+				PhaseName = NSLOCTEXT("HUD", "Vote", "Финальное ГОЛОСОВАНИЕ");
 				Text_Vote->SetText(NSLOCTEXT("HUD", "VoteText", "ГОЛОС ПРОТИВ:"));
 					
 				Text_MoveFor->SetVisibility(ESlateVisibility::Collapsed);

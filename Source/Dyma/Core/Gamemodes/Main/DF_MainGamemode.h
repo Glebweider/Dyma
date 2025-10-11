@@ -25,6 +25,7 @@ public:
 	virtual void StartDocReviewPhaseDelayed();
 	virtual void OnPostLogin(AController* NewPlayer) override;
 	virtual void RestartPlayer(AController* NewPlayer) override;
+	virtual void Logout(AController* Exiting) override;
 	virtual void AnvilOverlapPlayer_Implementation() override;
 
 protected:

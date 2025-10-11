@@ -19,6 +19,13 @@ public:
 	virtual void NativeConstruct() override;
 
 protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pagination")
+	int32 PageIndex = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pagination")
+	int32 ItemsPerPage = 12;
+
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="UI")
 	UDataTable* TableFaces;
 
