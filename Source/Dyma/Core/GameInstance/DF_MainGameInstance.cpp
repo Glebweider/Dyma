@@ -8,6 +8,7 @@
 #include "FindSessionsCallbackProxyAdvanced.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSubsystemUtils.h"
+#include "Dyma/Core/UserSettings/DF_UserSettings.h"
 #include "Dyma/Save/FaceSaveGame.h"
 #include "Interfaces/OnlineSessionInterface.h"
 #include "Kismet/GameplayStatics.h"
@@ -35,7 +36,30 @@ void UDF_MainGameInstance::Init()
 			FaceRowName = LoadObject->SavedFaceRowName;
 	}
 	else
-		FaceRowName = NAME_None;
+	{
+		FaceRowName = FName("Sigma");
+	}
+
+	if (UDF_UserSettings* Settings = Cast<UDF_UserSettings>(GEngine->GetGameUserSettings()))
+	{
+		UGameplayStatics::SetSoundMixClassOverride(
+			GetWorld(),
+			MainSoundMix,
+			MasterVolumeClass,     
+			Settings->GetMasterVolume(),
+			1.f,
+			0.f
+		);
+		
+		UGameplayStatics::SetSoundMixClassOverride(GetWorld(), MainSoundMix, VoiceVolumeClass, Settings->GetVoiceVolume());
+		UGameplayStatics::SetSoundMixClassOverride(GetWorld(), MainSoundMix, SFXVolumeClass, Settings->GetSFXVolume());
+		UGameplayStatics::SetSoundMixClassOverride(GetWorld(), MainSoundMix, AmbientVolumeClass, Settings->GetAmbientVolume());
+		
+		UE_LOG(LogTemp, Error, TEXT("UDF_MainGameInstance::Init() — Master: %.2f, Voice: %.2f, SFX: %.2f, Ambient: %.2f"),
+	 Settings->GetMasterVolume(), Settings->GetVoiceVolume(), Settings->GetSFXVolume(), Settings->GetAmbientVolume());
+		
+		UGameplayStatics::PushSoundMixModifier(GetWorld(), MainSoundMix);
+	}
 }
 
 void UDF_MainGameInstance::InitUniquePlayerId()
@@ -52,12 +76,6 @@ void UDF_MainGameInstance::InitUniquePlayerId()
 
 void UDF_MainGameInstance::SetPlayerFace_Implementation(FName NewFaceRowName)
 {
-	GEngine->AddOnScreenDebugMessage(
-	-1,
-	15.0f,
-	FColor::Red,
-	TEXT("GameInstance"));
-	
 	if (FaceRowName != NewFaceRowName)
 	{
 		FaceRowName = NewFaceRowName;
@@ -154,36 +172,6 @@ void UDF_MainGameInstance::OnDestroySessionSuccess()
 void UDF_MainGameInstance::OnDestroySessionFailure()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Failed to destroy session."));
-}
-
-UFindSessionsCallbackProxyAdvanced* UDF_MainGameInstance::AdvancedFindSessions(const FString& SessionName)
-{
-	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-	if (!PlayerController) return nullptr;
-
-	TArray<FSessionsSearchSetting> Filters;
-	FSessionPropertyKeyPair NameProperty;
-	NameProperty.Key = "SESSION_NAME";
-	NameProperty.Data.SetValue(SessionName); 
-
-	FSessionsSearchSetting NameFilter;
-	NameFilter.ComparisonOp = EOnlineComparisonOpRedux::Equals;
-	NameFilter.PropertyKeyPair = NameProperty;
-
-	Filters.Add(NameFilter);
-	
-	return UFindSessionsCallbackProxyAdvanced::FindSessionsAdvanced(
-		this,
-		PlayerController,
-		1000,
-		false,
-		EBPServerPresenceSearchType::AllServers,
-		Filters,
-		false,
-		false,
-		false,
-		true,
-		0);
 }
 
 void UDF_MainGameInstance::OnCreateSessionSuccess()

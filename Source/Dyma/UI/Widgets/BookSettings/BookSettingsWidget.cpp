@@ -15,6 +15,7 @@ void UBookSettingsWidget::NativeConstruct()
 	if (!UserSettings) return;
 
 	UserSettings->LoadSettings();
+	// === Screen Resolution ===
 	if (Selector_ScreenResolution)
 	{
 		const TArray<FString> ScreenResolutions = GetScreenResolutions();
@@ -42,6 +43,7 @@ void UBookSettingsWidget::NativeConstruct()
 		InitialResolutionIndex = CurrentIndex;
 	}
 
+	// === Screen Mode ===
 	if (Selector_ScreenMode)
 	{
 		EWindowMode::Type UserWindowMode = UserSettings->GetFullscreenMode();
@@ -72,6 +74,7 @@ void UBookSettingsWidget::NativeConstruct()
 		InitialWindowModeIndex = WindowModeIndex;
 	}
 
+	// === Graphics ===
 	if (Selector_Graphics)
 	{
 		TArray<FString> GraphicsOptions = { TEXT("Низкие"), TEXT("Средние"), TEXT("Высокие"), TEXT("Бюрократическое") };
@@ -83,6 +86,15 @@ void UBookSettingsWidget::NativeConstruct()
 		Selector_Graphics->OnSelectionChanged.AddDynamic(this, &UBookSettingsWidget::OnChangeSettings);
 
 		InitialGraphicsIndex = CurrentPreset;
+	}
+
+	// === Mouse Sensitivity ===
+	if (Slider_MouseSensitivity)
+	{
+		Slider_MouseSensitivity->SetMinValue(0.2f);
+		Slider_MouseSensitivity->SetValue(UserSettings->GetMouseSensitivity());
+		
+		Slider_MouseSensitivity->OnValueChanged.AddDynamic(this, &UBookSettingsWidget::OnChangeMouseSensitivity);
 	}
 	
 	// === Sounds ===
@@ -109,6 +121,14 @@ void UBookSettingsWidget::NativeConstruct()
 		Slider_AmbientVolume->SetValue(UserSettings->GetAmbientVolume());
 		Slider_AmbientVolume->OnValueChanged.AddDynamic(this, &UBookSettingsWidget::OnChangeSettingsVolume);
 	}
+}
+
+void UBookSettingsWidget::OnChangeMouseSensitivity()
+{
+	UserSettings->SetMouseSensitivity(Slider_MouseSensitivity->GetValue());
+	
+	GetWorld()->GetTimerManager().ClearTimer(SaveTimerHandle);
+	GetWorld()->GetTimerManager().SetTimer(SaveTimerHandle, this, &UBookSettingsWidget::SaveSettings, 0.5f, false);
 }
 
 void UBookSettingsWidget::OnChangeSettings()
@@ -146,10 +166,10 @@ void UBookSettingsWidget::OnChangeSettingsVolume()
 	UGameplayStatics::PushSoundMixModifier(GetWorld(), MainSoundMix);
 	
 	GetWorld()->GetTimerManager().ClearTimer(SaveTimerHandle);
-	GetWorld()->GetTimerManager().SetTimer(SaveTimerHandle, this, &UBookSettingsWidget::SaveVolumeSettings, 0.5f, false);
+	GetWorld()->GetTimerManager().SetTimer(SaveTimerHandle, this, &UBookSettingsWidget::SaveSettings, 0.5f, false);
 }
 
-void UBookSettingsWidget::SaveVolumeSettings()
+void UBookSettingsWidget::SaveSettings()
 {
 	if (!UserSettings) return;
 	UserSettings->ApplySettings(false);
@@ -191,30 +211,8 @@ void UBookSettingsWidget::ApplySettings()
 	// === Graphics Quality ===
 	int32 QualityGraphicsLevel = FMath::Clamp(GraphicsIndex, 0, 3);
 	UserSettings->SetOverallScalabilityLevel(QualityGraphicsLevel);
-
-	// === Sounds ===
-	/*float MasterVolume = UserSettings->GetMasterVolume();
-	float VoiceVolume = UserSettings->GetVoiceVolume();
-	float SFXVolume = UserSettings->GetSFXVolume();
-	float AmbientVolume = UserSettings->GetAmbientVolume();
 	
-	if (!MainSoundMix) return;
-
-	if (MasterVolumeClass) UGameplayStatics::SetSoundMixClassOverride(GetWorld(), MainSoundMix, MasterVolumeClass, MasterVolume, 0.f, true);
-	if (VoiceVolumeClass) UGameplayStatics::SetSoundMixClassOverride(GetWorld(), MainSoundMix, VoiceVolumeClass, VoiceVolume, 0.f, true);
-	if (SFXVolumeClass) UGameplayStatics::SetSoundMixClassOverride(GetWorld(), MainSoundMix, SFXVolumeClass, SFXVolume, 0.f, true);
-	if (AmbientVolumeClass) UGameplayStatics::SetSoundMixClassOverride(GetWorld(), MainSoundMix, AmbientVolumeClass, AmbientVolume, 0.f, true);
-
-	UGameplayStatics::PushSoundMixModifier(GetWorld(), MainSoundMix);
-	
-	UserSettings->SetMasterVolume(MasterVolume);
-	UserSettings->SetVoiceVolume(VoiceVolume);
-	UserSettings->SetSFXVolume(SFXVolume);
-	UserSettings->SetAmbientVolume(AmbientVolume);*/
-
-	// Save Settings
-	UserSettings->ApplySettings(false);
-	UserSettings->SaveSettings();
+	SaveSettings();
 
 	InitialResolutionIndex = ResolutionIndex;
 	InitialWindowModeIndex = ModeIndex;

@@ -18,18 +18,23 @@ public:
 	UDF_UserSettings(const FObjectInitializer& ObjectInitializer);
 
 	// === Геттеры ===
+	float GetMouseSensitivity() const {return MouseSensitivity; }
 	float GetMasterVolume() const { return MasterVolume; }
 	float GetVoiceVolume() const { return VoiceVolume; }
 	float GetSFXVolume() const { return SFXVolume; }
 	float GetAmbientVolume() const { return AmbientVolume; }
 
 	// === Сеттеры ===
+	void SetMouseSensitivity(float value);
 	void SetMasterVolume(float Value);
 	void SetVoiceVolume(float Value);
 	void SetSFXVolume(float Value);
 	void SetAmbientVolume(float Value);
 
 private:
+	UPROPERTY(Config)
+	float MouseSensitivity;
+	
 	UPROPERTY(Config)
 	float MasterVolume;
 

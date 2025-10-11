@@ -6,6 +6,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "Dyma/Characters/Player/Interfaces/InputToPlayerInterface.h"
 #include "Dyma/Characters/Player/State/DF_PlayerState.h"
+#include "Dyma/Core/UserSettings/DF_UserSettings.h"
 #include "Dyma/UI/Manager/UIManager.h"
 #include "Dyma/UI/Widgets/Lobby/LobbyWidget.h"
 #include "GameFramework/Character.h"
@@ -22,6 +23,8 @@ void ADF_PlayerController::BeginPlay()
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
 			if (InputMappingContext)
 				Subsystem->AddMappingContext(InputMappingContext, 0);
+	
+	UserSettings = Cast<UDF_UserSettings>(GEngine->GetGameUserSettings());
 }
 
 void ADF_PlayerController::OnPossess(APawn* InPawn)
@@ -121,9 +124,11 @@ void ADF_PlayerController::Move(const FInputActionValue& Value)
 void ADF_PlayerController::Look(const FInputActionValue& Value)
 {
 	FVector2D LookAxis = Value.Get<FVector2D>();
+
+	float MouseSensitivity = UserSettings->GetMouseSensitivity();
 	
-	AddYawInput(LookAxis.X);
-	AddPitchInput(LookAxis.Y);		
+	AddYawInput(LookAxis.X * MouseSensitivity);
+	AddPitchInput(LookAxis.Y * MouseSensitivity);		
 }
 
 void ADF_PlayerController::StartJump()

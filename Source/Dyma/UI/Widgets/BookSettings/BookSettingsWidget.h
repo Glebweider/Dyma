@@ -35,6 +35,9 @@ public:
 	USettingItem_Selector* Selector_Graphics;
 
 	UPROPERTY(BlueprintReadWrite, Category = "UI")
+	USettingItem_Slider* Slider_MouseSensitivity;
+
+	UPROPERTY(BlueprintReadWrite, Category = "UI")
 	USettingItem_Slider* Slider_MasterVolume;
 
 	UPROPERTY(BlueprintReadWrite, Category = "UI")
@@ -81,11 +84,14 @@ private:
 	UDF_UserSettings* UserSettings;
 
 	UFUNCTION()
+	void OnChangeMouseSensitivity();
+
+	UFUNCTION()
 	void OnChangeSettings();
 
 	UFUNCTION()
 	void OnChangeSettingsVolume();
 
 	UFUNCTION()
-	void SaveVolumeSettings();
+	void SaveSettings();
 };

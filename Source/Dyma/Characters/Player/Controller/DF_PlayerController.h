@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "InputMappingContext.h"
+#include "Dyma/Core/UserSettings/DF_UserSettings.h"
 #include "DF_PlayerController.generated.h"
 
 struct FProjectData;
@@ -28,6 +29,9 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
+	UPROPERTY()
+	UDF_UserSettings* UserSettings;
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	UInputMappingContext* InputMappingContext;
 

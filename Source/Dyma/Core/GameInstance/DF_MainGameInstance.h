@@ -34,10 +34,23 @@ public:
 	void AdvancedDestroySession();
 
 	UFUNCTION(BlueprintCallable)
-	UFindSessionsCallbackProxyAdvanced* AdvancedFindSessions(const FString& SessionName);
-
-	UFUNCTION(BlueprintCallable)
 	void AdvancedJoinSession(const FString& SessionName, const int32& SessionIndex);
+
+	// === Sounds ===
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundMix* MainSoundMix;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundClass* MasterVolumeClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundClass* VoiceVolumeClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundClass* SFXVolumeClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundClass* AmbientVolumeClass;
 
 	virtual void Init() override;
 	virtual void InitUniquePlayerId();
