@@ -24,10 +24,27 @@ void UUserFaceSlotWidget::OnSelectFace()
 
 void UUserFaceSlotWidget::HandleFaceRowChanged(FName NewFaceRowName)
 {
+	FSlateBrush Brush = Image->GetBrush();
+	
+	Brush.DrawAs = ESlateBrushDrawType::RoundedBox;
+	Brush.OutlineSettings.RoundingType = ESlateBrushRoundingType::FixedRadius;
+
 	if (NewFaceRowName == RowName)
-		Text->SetColorAndOpacity(FSlateColor(FLinearColor(0.48f, 0.00f, 0.11f, 1.00f)));
-	else
-		Text->SetColorAndOpacity(FSlateColor(FLinearColor(0.f, 0.f, 0.f, 1.f)));
+	{
+		FSlateColor Color = FSlateColor(FLinearColor(0.48f, 0.00f, 0.11f, 1.00f));
+		
+		Brush.OutlineSettings.Width = 5.f;
+		Brush.OutlineSettings.Color = Color;
+		
+		Text->SetColorAndOpacity(Color);
+	} else
+	{
+		Brush.OutlineSettings.Width = 0.f;
+
+		Text->SetColorAndOpacity(FLinearColor(0.f, 0.0f, 0.f, 1.00f));
+	}
+	
+	Image->SetBrush(Brush);
 }
 
 void UUserFaceSlotWidget::SetRowName(const FName& InRowName)
