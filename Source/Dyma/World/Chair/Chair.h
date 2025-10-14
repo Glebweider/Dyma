@@ -18,7 +18,7 @@ public:
 	AChair();
 
 	UFUNCTION(Reliable, Server)
-	void StartGame();
+	void Server_StartGame();
 	
 	UFUNCTION(Reliable, NetMulticast)
 	void Multi_StartGame();

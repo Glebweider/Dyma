@@ -23,6 +23,7 @@ public:
 	virtual void StartGame();
 	virtual void StartDocReviewPhase();
 	virtual void StartDocReviewPhaseDelayed();
+	virtual void StartVotePause_Implementation() override;
 	virtual void OnPostLogin(AController* NewPlayer) override;
 	virtual void RestartPlayer(AController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
@@ -73,6 +74,8 @@ private:
 	void PauseBeforeNext();
 
 	bool bGameStarted = false;
+	bool bPrevRoundIsPause = false;
+	bool bNextRoundIsPause = false;
 	
 	int32 CurrentSpeakerIndex;
 	int32 CurrentRound;

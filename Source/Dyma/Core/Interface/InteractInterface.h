@@ -4,12 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
-#include "GamemodeInterface.generated.h"
+#include "InteractInterface.generated.h"
 
-class UBaseUserWidget;
 // This class does not need to be modified.
 UINTERFACE()
-class UGamemodeInterface : public UInterface
+class UInteractInterface : public UInterface
 {
 	GENERATED_BODY()
 };
@@ -17,14 +16,14 @@ class UGamemodeInterface : public UInterface
 /**
  * 
  */
-class DYMA_API IGamemodeInterface
+class DYMA_API IInteractInterface
 {
 	GENERATED_BODY()
 
 public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
-	void AnvilOverlapPlayer();
+	void StartInteract(ACharacter* InteractPlayer);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
-	void StartVotePause();
+	void StopInteract(ACharacter* InteractPlayer);
 };

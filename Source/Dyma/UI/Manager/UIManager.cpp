@@ -69,9 +69,7 @@ bool UUIManager::ShowUI_Implementation(TSubclassOf<UBaseUserWidget> WidgetClass)
 	Widgets.Add(NewWidget->WidgetName, NewWidget);
 
 	if (NewWidget->bCanClose)
-	{
 		ActivityWidget = NewWidget;
-	}
 
 	if (NewWidget->bCanBlockedInput)
 		SetInputSettings(true);
@@ -92,25 +90,19 @@ void UUIManager::HandleEscape_Implementation()
 	
 	if (!PauseMenuWidget) return;
 
-	UBaseUserWidget* PauseWidget = GetActivityWidgetByClass(PauseMenuWidget);
-
-	if (PauseWidget)
+	if (auto PauseWidget = GetActivityWidgetByClass(PauseMenuWidget))
 	{
 		bool bIsVisible = PauseWidget->IsVisible();
 		PauseWidget->SetVisibility(bIsVisible ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 		ActivityWidget = bIsVisible ? nullptr : PauseWidget;
 		SetInputSettings(!bIsVisible);
 	}
-	else
+	else if (auto NewPauseWidget = CreateWidget<UBaseUserWidget>(PlayerController, PauseMenuWidget))
 	{
-		auto NewPauseWidget = CreateWidget<UBaseUserWidget>(PlayerController, PauseMenuWidget);
-		if (NewPauseWidget)
-		{
-			NewPauseWidget->AddToViewport();
-			Widgets.Add(NewPauseWidget->WidgetName, NewPauseWidget);
-			ActivityWidget = NewPauseWidget;
-			SetInputSettings(true);
-		}
+		NewPauseWidget->AddToViewport();
+		Widgets.Add(NewPauseWidget->WidgetName, NewPauseWidget);
+		ActivityWidget = NewPauseWidget;
+		SetInputSettings(true);
 	}
 }
 
@@ -145,10 +137,11 @@ void UUIManager::SetInputSettings(bool bIsUIActive)
 {
 	if (!PlayerController) return;
 
-	if (ULocalPlayer* LocalPlayer = PlayerController->GetLocalPlayer())
+	if (PlayerController->GetLocalPlayer())
 	{
-		if (auto Pawn = PlayerController->GetPawn())
-			Pawn->FindComponentByClass<UCharacterMovementComponent>()->DisableMovement();
+		if (APawn* Pawn = PlayerController->GetPawn())
+			if (UCharacterMovementComponent* Movement = Pawn->FindComponentByClass<UCharacterMovementComponent>())
+				Movement->DisableMovement();
 		
 		PlayerController->SetIgnoreLookInput(bIsUIActive);
 		PlayerController->bShowMouseCursor = bIsUIActive;

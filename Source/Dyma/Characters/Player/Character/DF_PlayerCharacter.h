@@ -26,6 +26,7 @@ public:
 	virtual void StartVoteRound_Implementation() override;
 	virtual void StartFinalVoteRound_Implementation() override;
 	virtual void StopVoteRound_Implementation() override;
+	virtual void NotifyPauseVoteAvailable_Implementation(int32 CountPlayers) override;
 	virtual void KickedPlayerName_Implementation(const FString& PlayerName) override;
 	virtual void ApplyFaceByRow_Implementation(FName RowName) override;
 	virtual void HandleMicrophone_Implementation(bool bIsNewMicrophone) override;

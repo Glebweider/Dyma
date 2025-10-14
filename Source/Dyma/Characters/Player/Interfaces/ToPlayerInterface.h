@@ -35,4 +35,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
 	void ApplyFaceByRow(FName RowName);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
+	void NotifyPauseVoteAvailable(int32 CountPlayers);
 };

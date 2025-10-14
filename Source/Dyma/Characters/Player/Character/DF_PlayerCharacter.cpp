@@ -163,6 +163,16 @@ void ADF_PlayerCharacter::StopVoteRound_Implementation()
 	Multi_StopVote();
 }
 
+void ADF_PlayerCharacter::NotifyPauseVoteAvailable_Implementation(int32 CountPlayers)
+{
+	if (!UIManager) return;
+
+	if (auto HUD = IPlayerToUIInterface::Execute_GetUI(UIManager, "HUD"))
+	{
+		IHUDInterface::Execute_UpdateStartPauseVote(HUD, true, CountPlayers);
+	}
+}
+
 void ADF_PlayerCharacter::Multi_StopVote_Implementation()
 {
 	bHasVoted = false;

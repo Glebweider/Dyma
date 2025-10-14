@@ -43,22 +43,7 @@ void ADF_GameState::SetMoveForCharacter(ACharacter* Character)
     OnPhaseChanged.Broadcast(CurrentPhase, RoundNumber, PhaseDuration, Character);
 }
 
-void ADF_GameState::OnRep_CurrentPhase()
-{
-    OnPhaseChanged.Broadcast(CurrentPhase, RoundNumber, PhaseDuration, MoveForCharacter);
-}
-
-void ADF_GameState::OnRep_RoundNumber()
-{
-    OnPhaseChanged.Broadcast(CurrentPhase, RoundNumber, PhaseDuration, MoveForCharacter);
-}
-
-void ADF_GameState::OnRep_PhaseDuration()
-{
-    OnPhaseChanged.Broadcast(CurrentPhase, RoundNumber, PhaseDuration, MoveForCharacter);
-}
-
-void ADF_GameState::OnRep_MoveForCharacter()
+void ADF_GameState::OnRep_PhaseVariable()
 {
     OnPhaseChanged.Broadcast(CurrentPhase, RoundNumber, PhaseDuration, MoveForCharacter);
 }
@@ -70,4 +55,5 @@ void ADF_GameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
     DOREPLIFETIME(ADF_GameState, RoundNumber);
     DOREPLIFETIME(ADF_GameState, PhaseDuration);
     DOREPLIFETIME(ADF_GameState, MoveForCharacter);
+    DOREPLIFETIME(ADF_GameState, bCanVotePause);
 }

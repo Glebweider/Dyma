@@ -7,6 +7,7 @@
 #include "Dyma/UI/Widgets/BaseUser/BaseUserWidget.h"
 #include "DF_HUD.generated.h"
 
+class UVerticalBox;
 class UProgressBar;
 class UImage;
 enum class EGamePhase : uint8;
@@ -29,6 +30,8 @@ protected:
 	virtual void SetVoteText_Implementation(const FString& NewText) override;
 	virtual void SetCastVote_Implementation(bool bIsVoteBtnPressed) override;
 	virtual void SetKickedPlayerName_Implementation(const FString& PlayerName) override;
+	virtual void UpdateStartPauseVote_Implementation(bool bIsActive, int32 CountPlayers) override;
+	virtual void SetPauseVoteCount_Implementation(int32 CountVotedPlayer) override;
 	virtual void UpdateVoteProgress();
 
 	FTimerHandle CountdownTimerHandle;
@@ -60,6 +63,15 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UImage* Img_Microphone;
+
+	UPROPERTY(meta = (BindWidget))
+	UVerticalBox* VB_VotePause;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* Text_CounterVotes;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* Text_CounterAllPlayer;
 	
 	UFUNCTION()
 	void OnPhaseChanged(EGamePhase NewPhase, int32 RoundNumber, float Duration, ACharacter* MoveForCharacter);

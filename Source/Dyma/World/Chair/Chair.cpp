@@ -24,7 +24,7 @@ void AChair::Multi_StartGame_Implementation()
 	}
 }
 
-void AChair::StartGame_Implementation()
+void AChair::Server_StartGame_Implementation()
 {
 	Multi_StartGame();
 }

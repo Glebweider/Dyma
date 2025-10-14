@@ -62,7 +62,7 @@ void ULobbyWidget::EndStartGame()
 		GetOwningPlayer()->SetViewTarget(MyPawn);
 		MyPawn->GetCharacterMovement()->DisableMovement();
 	}
-
+	
 	if (GetOwningPlayerPawn()->HasAuthority())
 		if (ADF_MainGamemode* GM = Cast<ADF_MainGamemode>(UGameplayStatics::GetGameMode(this)))
 			GM->StartDocReviewPhase();

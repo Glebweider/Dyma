@@ -6,6 +6,7 @@
 #include "Components/Image.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
+#include "Components/VerticalBox.h"
 #include "Dyma/Characters/Player/Interfaces/PlayerStateInterface.h"
 #include "Dyma/Core/GameState/DF_GameState.h"
 #include "Dyma/UI/Widgets/FindedSession/FindedSessionWidget.h"
@@ -15,8 +16,16 @@ void UDF_HUD::NativeConstruct()
 {
 	Super::NativeConstruct();
 	
-	if (ADF_GameState* GS = Cast<ADF_GameState>(GetWorld()->GetGameState()))
+	if (auto GS = Cast<ADF_GameState>(GetWorld()->GetGameState()))
+	{
 		GS->OnPhaseChanged.AddDynamic(this, &UDF_HUD::OnPhaseChanged);
+
+		OnPhaseChanged(
+			GS->CurrentPhase,
+			GS->RoundNumber,
+			GS->PhaseDuration,
+			GS->MoveForCharacter);
+	}
 }
 
 void UDF_HUD::UpdateMicrophoneState_Implementation(bool bIsActive)
@@ -74,6 +83,21 @@ void UDF_HUD::SetKickedPlayerName_Implementation(const FString& PlayerName)
 		Text_KickedPlayer->SetText(FText::Format(NSLOCTEXT("HUD", "KickedPlayer", "Бюрократ {0} уволен"), FText::FromString(PlayerName)));
 }
 
+void UDF_HUD::UpdateStartPauseVote_Implementation(bool bIsActive, int32 CountPlayers)
+{
+	if (VB_VotePause)
+		VB_VotePause->SetVisibility(bIsActive ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+
+	if (Text_CounterAllPlayer)
+		Text_CounterAllPlayer->SetText(FText::AsNumber(CountPlayers));
+}
+
+void UDF_HUD::SetPauseVoteCount_Implementation(int32 CountVotedPlayer)
+{
+	if (Text_CounterVotes)
+		Text_CounterVotes->SetText(FText::AsNumber(CountVotedPlayer));
+}
+
 void UDF_HUD::UpdateVoteProgress()
 {
 	if (!ProgressBar_Vote) return;
@@ -105,6 +129,8 @@ void UDF_HUD::UpdateCountdown()
 
 void UDF_HUD::OnPhaseChanged(EGamePhase NewPhase, int32 RoundNumber, float Duration, ACharacter* MoveForCharacter)
 {
+	UE_LOG(LogTemp, Display, TEXT("OnPhaseChanged"));
+	
 	if (!Text_Phase && !Text_MoveFor && !Text_Time && !Text_Vote && !Text_HelpVote && !ProgressBar_Vote && !Text_KickedPlayer) return;
 
 	GetWorld()->GetTimerManager().ClearTimer(CountdownTimerHandle);

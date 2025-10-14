@@ -3,6 +3,7 @@
 
 #include "DF_MainGamemode.h"
 #include "HttpModule.h"
+#include "Algo/Count.h"
 #include "Dyma/Characters/Player/Controller/DF_PlayerController.h"
 #include "Dyma/Characters/Player/Interfaces/ToPlayerInterface.h"
 #include "Dyma/Characters/Player/State/DF_PlayerState.h"
@@ -63,6 +64,7 @@ void ADF_MainGamemode::StartGame()
 					Obj->TryGetStringField(TEXT("support"), Project.Support);
 
 					DF_GameState->Projects.Add(Project);
+					DF_GameState->bCanVotePause = true;
 				}
 
 				int32 ProjectIndex = 0;
@@ -91,17 +93,30 @@ void ADF_MainGamemode::StartDocReviewPhase()
 		3.f,
 		false
 	);
-	
+
 	if (DF_GameState) //60
-		DF_GameState->SetPhase(EGamePhase::DocReview, 60.f, this, FName("StartRoundsPhase"));
+		DF_GameState->SetPhase(EGamePhase::DocReview, 6.f, this, FName("StartRoundsPhase"));
 }
 
 void ADF_MainGamemode::StartDocReviewPhaseDelayed()
 {
 	for (AChair* Chair : Chairs) {
 		if (Chair->Character)
-			Chair->StartGame();
+			Chair->Server_StartGame();
 	}
+}
+
+void ADF_MainGamemode::StartVotePause_Implementation()
+{
+	if (!bPrevRoundIsPause)
+		for (AChair* Chair : Chairs) {
+			if (ACharacter* Character = Chair->Character)
+			{
+				int32 Count = Algo::CountIf(Chairs, [](AChair* Chair){ return Chair && Chair->Character; });
+				
+				IToPlayerInterface::Execute_NotifyPauseVoteAvailable(Character, Count);
+			}
+		}
 }
 
 void ADF_MainGamemode::StartRoundsPhase()
@@ -127,11 +142,11 @@ void ADF_MainGamemode::NextSpeaker()
 {
 	ACharacter* Speaker = RoundCharacters[CurrentSpeakerIndex];
 	
-	DF_GameState->SetPhaseDuration(35.f); // 35
+	DF_GameState->SetPhaseDuration(5.f); // 35
 	DF_GameState->SetMoveForCharacter(Speaker);
 	
 	GetWorldTimerManager().SetTimer(SpeakerTimer, this,
-		&ADF_MainGamemode::PauseBeforeNext, 35.f, false); // 35
+		&ADF_MainGamemode::PauseBeforeNext, 5.f, false); // 35
 }
 
 void ADF_MainGamemode::PauseBeforeNext()
@@ -154,7 +169,7 @@ void ADF_MainGamemode::PauseBeforeNext()
 
 void ADF_MainGamemode::StartDebatPhase()
 {
-	DF_GameState->SetPhase(EGamePhase::Debate, 90.f, this, FName("StartVotePhase")); // 90
+	DF_GameState->SetPhase(EGamePhase::Debate, 10.f, this, FName("StartVotePhase")); // 90
 }
 
 void ADF_MainGamemode::StartVotePhase()
@@ -238,6 +253,10 @@ void ADF_MainGamemode::CountFinalVotesPhase()
 void ADF_MainGamemode::CountVotesPhase()
 {
 	DF_GameState->SetCurrentPhase(EGamePhase::Elimination);
+	CurrentRound++;
+
+	if (bPrevRoundIsPause)
+		bPrevRoundIsPause = false;
 	
 	TMap<ADF_PlayerState*, int32> VoteCounts;
 	for (AChair* Chair : Chairs)
@@ -308,8 +327,6 @@ void ADF_MainGamemode::CountVotesPhase()
 		
 		GetWorld()->SpawnActor<AActor>(AnvilClass, Location, Rotation, Params);
 	}
-
-	CurrentRound++;
 }
 
 void ADF_MainGamemode::AnvilOverlapPlayer_Implementation()
@@ -427,7 +444,7 @@ void ADF_MainGamemode::OnPostLogin(AController* NewPlayer)
 
 				if (CameraActors.Num() > 0)
 				{
-					APlayerController* PC = Cast<APlayerController>(NewPlayer);
+					auto PC = Cast<APlayerController>(NewPlayer);
 					PC->SetViewTargetWithBlend(CameraActors[0], 0.0f);
 				}
 
@@ -461,8 +478,11 @@ void ADF_MainGamemode::Logout(AController* Exiting)
 	{
 		if (Chair->GetOwner() == Exiting)
 		{
-			Multi_UpdateNameplate(Cast<AChair>(Chair), nullptr);
-			Chair->SetOwner(nullptr);
+			auto Chr = Cast<AChair>(Chair);
+			
+			Multi_UpdateNameplate(Chr, nullptr);
+			Chr->SetOwner(nullptr);
+			Chr->Character = nullptr;
 		}
 	}
 

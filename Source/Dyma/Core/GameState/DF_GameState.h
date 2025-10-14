@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Dyma/Core/Enums/GamePhase.h"
+#include "Dyma/Core/Interface/GameStateInterface.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/GameState.h"
 #include "DF_GameState.generated.h"
@@ -15,27 +16,32 @@ struct FProjectData;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FOnPhaseChanged, EGamePhase, NewPhase, int32, RoundNumber, float, Duration, ACharacter*, MoveForCharacter);
 
 UCLASS()
-class DYMA_API ADF_GameState : public AGameStateBase
+class DYMA_API ADF_GameState : public AGameStateBase, public IGameStateInterface
 {
 	GENERATED_BODY()
 
 public:
+	virtual bool CanVotePause_Implementation() override { return bCanVotePause; };
+
+	UPROPERTY(Replicated)
+	bool bCanVotePause = false;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<FProjectData> Projects;
 	
 	UPROPERTY(BlueprintAssignable, Category="Phase")
 	FOnPhaseChanged OnPhaseChanged;
 	
-	UPROPERTY(ReplicatedUsing=OnRep_CurrentPhase)
+	UPROPERTY(ReplicatedUsing=OnRep_PhaseVariable)
 	EGamePhase CurrentPhase = EGamePhase::Lobby;
 	
-	UPROPERTY(ReplicatedUsing=OnRep_RoundNumber)
+	UPROPERTY(ReplicatedUsing=OnRep_PhaseVariable)
 	int32 RoundNumber = 0;
 	
-	UPROPERTY(ReplicatedUsing=OnRep_PhaseDuration)
+	UPROPERTY(ReplicatedUsing=OnRep_PhaseVariable)
 	float PhaseDuration;
 
-	UPROPERTY(ReplicatedUsing=OnRep_MoveForCharacter)
+	UPROPERTY(ReplicatedUsing=OnRep_PhaseVariable)
 	ACharacter* MoveForCharacter;
 	
 	UFUNCTION(BlueprintCallable, Category="Phase")
@@ -57,16 +63,7 @@ protected:
 	FTimerHandle PhaseTimer;
 
 	UFUNCTION()
-	void OnRep_CurrentPhase();
-	
-	UFUNCTION()
-	void OnRep_RoundNumber();
-	
-	UFUNCTION()
-	void OnRep_PhaseDuration();
-
-	UFUNCTION()
-	void OnRep_MoveForCharacter();
+	void OnRep_PhaseVariable();
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };
