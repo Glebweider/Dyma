@@ -8,10 +8,12 @@
 #include "Dyma/Characters/Player/State/DF_PlayerState.h"
 #include "Dyma/Core/GameInstance/DF_MainGameInstance.h"
 #include "Dyma/Core/GameState/DF_GameState.h"
+#include "Dyma/Core/Interface/GamemodeInterface.h"
 #include "Dyma/Core/Structures/Face.h"
 #include "Dyma/UI/Interfaces/HUDInterface.h"
 #include "Dyma/UI/Manager/UIManager.h"
 #include "Interfaces/VoiceInterface.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "Net/VoiceConfig.h"
@@ -165,12 +167,15 @@ void ADF_PlayerCharacter::StopVoteRound_Implementation()
 
 void ADF_PlayerCharacter::NotifyPauseVoteAvailable_Implementation(int32 CountPlayers)
 {
-	if (!UIManager) return;
+	Client_NotifyPauseVoteAvailable(CountPlayers);
+}
 
+void ADF_PlayerCharacter::Client_NotifyPauseVoteAvailable_Implementation(int32 CountPlayers)
+{
+	if (!UIManager) return;
+	
 	if (auto HUD = IPlayerToUIInterface::Execute_GetUI(UIManager, "HUD"))
-	{
 		IHUDInterface::Execute_UpdateStartPauseVote(HUD, true, CountPlayers);
-	}
 }
 
 void ADF_PlayerCharacter::Multi_StopVote_Implementation()
@@ -311,6 +316,12 @@ void ADF_PlayerCharacter::RegisterRemoteTalker(APlayerState* RemotePlayerState)
 void ADF_PlayerCharacter::Server_SetMicrophoneActive_Implementation(bool bIsActive)
 {
 	Multi_SetMicrophoneActive(bIsActive);
+}
+
+void ADF_PlayerCharacter::Server_StartVotePauseToGameMode_Implementation()
+{
+	if (auto GM = UGameplayStatics::GetGameMode(this))
+		IGamemodeInterface::Execute_StartVotePause(GM);
 }
 
 void ADF_PlayerCharacter::Multi_SetMicrophoneActive_Implementation(bool bIsActive)

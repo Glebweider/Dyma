@@ -129,8 +129,6 @@ void UDF_HUD::UpdateCountdown()
 
 void UDF_HUD::OnPhaseChanged(EGamePhase NewPhase, int32 RoundNumber, float Duration, ACharacter* MoveForCharacter)
 {
-	UE_LOG(LogTemp, Display, TEXT("OnPhaseChanged"));
-	
 	if (!Text_Phase && !Text_MoveFor && !Text_Time && !Text_Vote && !Text_HelpVote && !ProgressBar_Vote && !Text_KickedPlayer) return;
 
 	GetWorld()->GetTimerManager().ClearTimer(CountdownTimerHandle);

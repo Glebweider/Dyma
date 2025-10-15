@@ -25,6 +25,7 @@ public:
 	
 	virtual void StartVoteRound_Implementation() override;
 	virtual void StartFinalVoteRound_Implementation() override;
+	virtual void StartVotePauseToGameMode_Implementation() override { Server_StartVotePauseToGameMode(); };
 	virtual void StopVoteRound_Implementation() override;
 	virtual void NotifyPauseVoteAvailable_Implementation(int32 CountPlayers) override;
 	virtual void KickedPlayerName_Implementation(const FString& PlayerName) override;
@@ -39,21 +40,27 @@ protected:
 	virtual void OnVoteCast();
 	virtual void RegisterRemoteTalker(APlayerState* RemotePlayerState);
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UFUNCTION(Client, Reliable)
+	void Client_NotifyPauseVoteAvailable(int32 CountPlayers);
 	
 	UFUNCTION(NetMulticast, Reliable)
-	virtual void OnVotingTimer();
+	void OnVotingTimer();
 
 	UFUNCTION(NetMulticast, Reliable)
-	virtual void OnVotingFinalTimer();
+	void OnVotingFinalTimer();
 
 	UFUNCTION(NetMulticast, Reliable)
-	virtual void Multi_StopVote();
+	void Multi_StopVote();
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SetMicrophoneActive(bool bIsActive);
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SetFaceRow(FName RowName);
+
+	UFUNCTION(Server, Reliable)
+	void Server_StartVotePauseToGameMode();
 
 	UFUNCTION(Server, Reliable)
 	void Server_SetMicrophoneActive(bool bIsActive);
