@@ -100,17 +100,24 @@ void ADF_PlayerCharacter::Multi_SetFaceRow_Implementation(FName RowName)
 
 void ADF_PlayerCharacter::HandleMicrophone_Implementation(bool bIsNewMicrophone)
 {
-	if (IOnlineSubsystem* OSS = Online::GetSubsystem(GetWorld()))
-		if (auto Voice = OSS->GetVoiceInterface())
-			if (bIsNewMicrophone)
-			{
-				Voice->RegisterLocalTalker(0);
-				Voice->StartNetworkedVoice(0);				
-			} else
-			{
-				Voice->StopNetworkedVoice(0);
-				Voice->UnregisterLocalTalker(0);
-			}
+	IOnlineSubsystem* OSS = Online::GetSubsystem(GetWorld());
+	if (!OSS) return;
+
+	IOnlineVoicePtr Voice = OSS->GetVoiceInterface();
+	if (!Voice.IsValid()) return;
+
+	if (bIsNewMicrophone)
+	{
+		Voice->RegisterLocalTalker(0);
+		Voice->StartNetworkedVoice(0);
+		UE_LOG(LogTemp, Log, TEXT("[VOICE] Local talker started"));
+	}
+	else
+	{
+		Voice->StopNetworkedVoice(0);
+		Voice->UnregisterLocalTalker(0);
+		UE_LOG(LogTemp, Log, TEXT("[VOICE] Local talker stopped"));
+	}
 
 	Server_SetMicrophoneActive(bIsNewMicrophone);
 }

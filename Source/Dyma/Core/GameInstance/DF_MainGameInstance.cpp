@@ -5,7 +5,6 @@
 #include "AdvancedSessionsLibrary.h"
 #include "CreateSessionCallbackProxyAdvanced.h"
 #include "EndSessionCallbackProxy.h"
-#include "FindSessionsCallbackProxyAdvanced.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSubsystemUtils.h"
 #include "Dyma/Core/UserSettings/DF_UserSettings.h"
@@ -40,7 +39,7 @@ void UDF_MainGameInstance::Init()
 		FaceRowName = FName("Sigma");
 	}
 
-	if (UDF_UserSettings* Settings = Cast<UDF_UserSettings>(GEngine->GetGameUserSettings()))
+	if (auto Settings = Cast<UDF_UserSettings>(GEngine->GetGameUserSettings()))
 	{
 		UGameplayStatics::SetSoundMixClassOverride(
 			GetWorld(),

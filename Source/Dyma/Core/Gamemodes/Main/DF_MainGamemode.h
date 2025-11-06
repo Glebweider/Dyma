@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "OnlineSubsystem.h"
 #include "Dyma/Core/Interface/GamemodeInterface.h"
 #include "GameFramework/GameModeBase.h"
 #include "DF_MainGamemode.generated.h"
@@ -70,6 +71,8 @@ protected:
 	TSubclassOf<AActor> AnvilClass;
 
 private:
+	IOnlineVoicePtr SessionVoiceInterface;
+	
 	void NextSpeaker();
 	void PauseBeforeNext();
 

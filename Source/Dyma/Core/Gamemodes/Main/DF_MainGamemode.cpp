@@ -3,10 +3,13 @@
 
 #include "DF_MainGamemode.h"
 #include "HttpModule.h"
+#include "Online.h"
+#include "OnlineSubsystemUtils.h"
 #include "Algo/Count.h"
 #include "Dyma/Characters/Player/Controller/DF_PlayerController.h"
 #include "Dyma/Characters/Player/Interfaces/ToPlayerInterface.h"
 #include "Dyma/Characters/Player/State/DF_PlayerState.h"
+#include "Dyma/Core/GameInstance/DF_MainGameInstance.h"
 #include "Dyma/Core/GameState/DF_GameState.h"
 #include "Dyma/Core/Interface/GameInstanceInterface.h"
 #include "Dyma/Core/Structures/Project.h"
@@ -397,10 +400,35 @@ void ADF_MainGamemode::Multi_UpdateNameplate_Implementation(AChair* Chair, ACont
 void ADF_MainGamemode::OnPostLogin(AController* NewPlayer)
 {
 	Super::OnPostLogin(NewPlayer);
-
+	
 	if (bGameStarted)
 		if (APlayerController* PC = Cast<APlayerController>(NewPlayer))
 			PC->ClientTravel(TEXT("/Game/Maps/LobbyMenu"), TRAVEL_Absolute);
+	
+	if (!SessionVoiceInterface.IsValid())
+		if (IOnlineSubsystem* Subsystem = Online::GetSubsystem(GetWorld()))
+		{
+			TSharedPtr<IOnlineVoice, ESPMode::ThreadSafe> VoiceInterface = Subsystem->GetVoiceInterface();
+
+			if (VoiceInterface.IsValid())
+				SessionVoiceInterface = VoiceInterface;
+		}
+	
+	TSharedPtr<const FUniqueNetId> NewId = NewPlayer->PlayerState->GetUniqueId().GetUniqueNetId();
+	if (!NewId.IsValid()) return;
+	
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		APlayerController* ExistingPC = It->Get();
+		if (!ExistingPC || ExistingPC == NewPlayer) continue;
+
+		TSharedPtr<const FUniqueNetId> ExistingId = ExistingPC->PlayerState->GetUniqueId().GetUniqueNetId();
+		if (ExistingId.IsValid())
+		{
+			SessionVoiceInterface->RegisterRemoteTalker(*ExistingId);
+			SessionVoiceInterface->RegisterRemoteTalker(*NewId);
+		}
+	}
 
 	Chairs.Empty();
 	Benchs.Empty();
@@ -443,10 +471,7 @@ void ADF_MainGamemode::OnPostLogin(AController* NewPlayer)
 				UGameplayStatics::GetAllActorsWithTag(GetWorld(), TEXT("StartCamera"), CameraActors);
 
 				if (CameraActors.Num() > 0)
-				{
-					auto PC = Cast<APlayerController>(NewPlayer);
-					PC->SetViewTargetWithBlend(CameraActors[0], 0.0f);
-				}
+					Cast<APlayerController>(NewPlayer)->SetViewTargetWithBlend(CameraActors[0], 0.0f);
 
 				return;
 			}
@@ -470,6 +495,12 @@ void ADF_MainGamemode::RestartPlayer(AController* NewPlayer)
 void ADF_MainGamemode::Logout(AController* Exiting)
 {
 	Super::Logout(Exiting);
+
+	if (!SessionVoiceInterface.IsValid()) return;
+	
+	if (APlayerState* ExitingState = Exiting->PlayerState)
+		if (TSharedPtr<const FUniqueNetId> ExitingId = ExitingState->GetUniqueId().GetUniqueNetId(); ExitingId.IsValid())
+			SessionVoiceInterface->UnregisterRemoteTalker(*ExitingId);
 	
 	TArray<AActor*> ChairActors;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AChair::StaticClass(), ChairActors);
