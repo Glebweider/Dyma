@@ -38,7 +38,4 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
 	void NotifyPauseVoteAvailable(int32 CountPlayers);
-
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
-	void StartVotePauseToGameMode();
 };

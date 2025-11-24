@@ -17,9 +17,11 @@ class DYMA_API AChair : public AActor
 public:
 	AChair();
 
+	/** Server RPC's */
 	UFUNCTION(Reliable, Server)
 	void Server_StartGame();
-	
+
+	/** Multicast RPC's */
 	UFUNCTION(Reliable, NetMulticast)
 	void Multi_StartGame();
 
@@ -33,7 +35,6 @@ public:
 	ABook* Book;
 
 protected:
-	virtual void Destroyed() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
 	UPROPERTY(EditAnywhere)

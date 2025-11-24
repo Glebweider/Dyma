@@ -44,6 +44,9 @@ protected:
 	void StartFinalVotePhase();
 
 	UFUNCTION()
+	void StartNewLobby();
+
+	UFUNCTION()
 	void CountVotesPhase();
 
 	UFUNCTION()
@@ -59,7 +62,7 @@ protected:
 	TArray<AChair*> Chairs;
 
 	UPROPERTY()
-	TArray<ABench*> Benchs;
+	TArray<ABench*> Benches;
 
 	UPROPERTY()
 	ADF_GameState* DF_GameState;

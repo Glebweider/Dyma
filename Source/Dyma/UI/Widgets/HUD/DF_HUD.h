@@ -23,15 +23,15 @@ class DYMA_API UDF_HUD : public UBaseUserWidget, public IHUDInterface
 public:
 	virtual void NativeConstruct() override;
 
-protected:
-	virtual void UpdateCountdown();  
+	/** Interfaces */
 	virtual void UpdateMicrophoneState_Implementation(bool bIsActive) override;
 	virtual void SetHelpVoteTextVisible_Implementation() override;
 	virtual void SetVoteText_Implementation(const FString& NewText) override;
 	virtual void SetCastVote_Implementation(bool bIsVoteBtnPressed) override;
 	virtual void SetKickedPlayerName_Implementation(const FString& PlayerName) override;
-	virtual void UpdateStartPauseVote_Implementation(bool bIsActive, int32 CountPlayers) override;
-	virtual void SetPauseVoteCount_Implementation(int32 CountVotedPlayer) override;
+
+protected:
+	virtual void UpdateCountdown();  
 	virtual void UpdateVoteProgress();
 
 	FTimerHandle CountdownTimerHandle;
@@ -56,22 +56,19 @@ protected:
 	UTextBlock* Text_HelpVote;
 
 	UPROPERTY(meta = (BindWidget))
-	UProgressBar* ProgressBar_Vote;
+	UTextBlock* Text_KickedPlayer;
 
 	UPROPERTY(meta = (BindWidget))
-	UTextBlock* Text_KickedPlayer;
+	UProgressBar* ProgressBar_Vote;
 
 	UPROPERTY(meta = (BindWidget))
 	UImage* Img_Microphone;
 
 	UPROPERTY(meta = (BindWidget))
-	UVerticalBox* VB_VotePause;
+	UImage* Img_Time;
 
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* Text_CounterVotes;
-
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* Text_CounterAllPlayer;
+	UPROPERTY(BlueprintReadOnly, Transient, meta = (BindWidgetAnim))
+	UWidgetAnimation* StartAnimation;
 	
 	UFUNCTION()
 	void OnPhaseChanged(EGamePhase NewPhase, int32 RoundNumber, float Duration, ACharacter* MoveForCharacter);

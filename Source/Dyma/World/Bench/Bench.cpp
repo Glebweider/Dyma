@@ -42,6 +42,7 @@ bool ABench::SeatPlayer(ACharacter* Player)
 			return true;
 		}
 	}
+	
 	return false;
 }
 

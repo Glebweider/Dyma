@@ -18,23 +18,18 @@ void ULobbyWidget::NativeConstruct()
 	MainGameInstance = GetGameInstance<UDF_MainGameInstance>();
 	
 	if (Btn_ApplyCreateSession)
-	{
 		Btn_ApplyCreateSession->OnClicked.AddDynamic(this, &ULobbyWidget::OnApplyCreateSessionClicked);
-	}
+	
 	if (Btn_ExitSession)
-	{
 		Btn_ExitSession->OnClicked.AddDynamic(this, &ULobbyWidget::OnExitSessionClicked);
-	}
-	if (WidgetSwitcher)
-	{
-		if (GetOwningPlayer()->GetLocalRole() == ROLE_Authority)
-			WidgetSwitcher->SetActiveWidgetIndex(1);
-	}
+	
+	if (WidgetSwitcher && GetOwningPlayer()->GetLocalRole() == ROLE_Authority)
+		WidgetSwitcher->SetActiveWidgetIndex(1);
 }
 
 void ULobbyWidget::OnApplyCreateSessionClicked()
 {
-	if (ADF_MainGamemode* GM = Cast<ADF_MainGamemode>(UGameplayStatics::GetGameMode(this)))
+	if (auto GM = Cast<ADF_MainGamemode>(UGameplayStatics::GetGameMode(this)))
 		if (const int32 NumPlayers = GM->GetNumPlayers(); NumPlayers > 1)
 		{
 			Btn_ApplyCreateSession->SetIsEnabled(false);
@@ -58,12 +53,12 @@ void ULobbyWidget::EndStartGame()
 		IPlayerToUIInterface::Execute_ChangeVisibilityWidgetByName(UIManager, "Lobby Menu");
 	}
 
-	if (ACharacter* MyPawn = Cast<ACharacter>(GetOwningPlayerPawn())) {
-		GetOwningPlayer()->SetViewTarget(MyPawn);
-		MyPawn->GetCharacterMovement()->DisableMovement();
+	if (auto Pawn = Cast<ACharacter>(GetOwningPlayerPawn())) {
+		GetOwningPlayer()->SetViewTarget(Pawn);
+		Pawn->GetCharacterMovement()->DisableMovement();
 	}
 	
 	if (GetOwningPlayerPawn()->HasAuthority())
-		if (ADF_MainGamemode* GM = Cast<ADF_MainGamemode>(UGameplayStatics::GetGameMode(this)))
+		if (auto GM = Cast<ADF_MainGamemode>(UGameplayStatics::GetGameMode(this)))
 			GM->StartDocReviewPhase();
 }

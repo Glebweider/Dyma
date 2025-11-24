@@ -4,13 +4,17 @@
 #include "Chair.h"
 #include "Blueprint/UserWidget.h"
 #include "Dyma/World/Book/Book.h"
-#include "Dyma/World/Nameplate/Nameplate.h"
 #include "Net/UnrealNetwork.h"
 
 
 AChair::AChair()
 {
 	PrimaryActorTick.bCanEverTick = false;
+}
+
+void AChair::Server_StartGame_Implementation()
+{
+	Multi_StartGame();
 }
 
 void AChair::Multi_StartGame_Implementation()
@@ -22,22 +26,6 @@ void AChair::Multi_StartGame_Implementation()
 		
 		Book->Server_OpenBookAndPage(EBookPage::OpenSecondPage);
 	}
-}
-
-void AChair::Server_StartGame_Implementation()
-{
-	Multi_StartGame();
-}
-
-void AChair::Destroyed()
-{
-	Super::Destroyed();
-
-	if (Nameplate)
-		Nameplate->Destroy();
-
-	if (Book)
-		Book->Destroy();
 }
 
 void AChair::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

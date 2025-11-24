@@ -17,6 +17,7 @@
 #include "Dyma/World/Chair/Chair.h"
 #include "Dyma/World/Nameplate/Nameplate.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
 #include "Kismet/GameplayStatics.h"
@@ -43,9 +44,7 @@ void ADF_MainGamemode::StartGame()
 	Request->OnProcessRequestComplete().BindLambda(
 		[this](FHttpRequestPtr Req, FHttpResponsePtr Resp, bool bWasSuccessful)
 		{
-			if (!bWasSuccessful) return;
-			if (!Resp.IsValid()) return;
-			if (Resp->GetResponseCode() != 200) return;
+			if (!Resp.IsValid() || !bWasSuccessful || Resp->GetResponseCode() != 200) return;
 
 			TArray<TSharedPtr<FJsonValue>> JsonArray;
 			FString JsonStr = Resp->GetContentAsString();
@@ -67,7 +66,6 @@ void ADF_MainGamemode::StartGame()
 					Obj->TryGetStringField(TEXT("support"), Project.Support);
 
 					DF_GameState->Projects.Add(Project);
-					DF_GameState->bCanVotePause = true;
 				}
 
 				int32 ProjectIndex = 0;
@@ -126,8 +124,10 @@ void ADF_MainGamemode::StartRoundsPhase()
 {
 	RoundCharacters.Empty();
 	for (AChair* Chair : Chairs)
+	{
 		if (ACharacter* Character = Chair->Character)
 			RoundCharacters.Add(Character);
+	}
 	
 	if (RoundCharacters.Num() == 2)
 		return StartFinalVotePhase();
@@ -189,7 +189,7 @@ void ADF_MainGamemode::StartFinalVotePhase()
 {
 	DF_GameState->SetPhase(EGamePhase::FinalVote, 30.f, this, FName("CountFinalVotesPhase")); //30
 	
-	for (ABench* Bench : Benchs)
+	for (ABench* Bench : Benches)
 	{
 		for (ACharacter* Character : Bench->GetOccupants())
 		{
@@ -202,14 +202,14 @@ void ADF_MainGamemode::StartFinalVotePhase()
 void ADF_MainGamemode::CountFinalVotesPhase()
 {
 	TMap<ADF_PlayerState*, int32> VoteCounts;
-	for (ABench* Bench : Benchs)
+	for (ABench* Bench : Benches)
 	{
 		for (ACharacter* Character : Bench->GetOccupants())
 		{
 			if (!Character) continue;
 			
 			if (auto PS = Character->GetPlayerState<ADF_PlayerState>()) {
-				if (ADF_PlayerState* VotedPS = Cast<ADF_PlayerState>(PS->VotedForPlayer))
+				if (auto VotedPS = Cast<ADF_PlayerState>(PS->VotedForPlayer))
 				{
 					int32& Count = VoteCounts.FindOrAdd(VotedPS);
 					Count++;
@@ -237,20 +237,105 @@ void ADF_MainGamemode::CountFinalVotesPhase()
 	if (Leaders.Num() == 1)
 	{
 		EliminatedPlayer = Leaders[0];
-	}
-	else if (Leaders.Num() > 1)
-	{
+	} else if (Leaders.Num() > 1) {
 		EliminatedPlayer = Leaders[FMath::RandRange(0, Leaders.Num() - 1)];
+	} else if (Leaders.Num() == 0) {
+		for (AChair* Chair : Chairs)
+		{
+			if (Chair->Character)
+				Leaders.Add(Cast<ADF_PlayerState>(Chair->Character->GetPlayerState()));
+
+			if (Leaders.Num() > 1)
+				EliminatedPlayer = Leaders[FMath::RandRange(0, Leaders.Num() - 1)];
+		}
 	}
 	
 	if (EliminatedPlayer)
 	{
+		const auto World = GetWorld();
+		if (!World) return;
+
+		DF_GameState->SetCurrentPhase(EGamePhase::Finished);
+
+		TArray<AActor*> CameraActors;
+		UGameplayStatics::GetAllActorsWithTag(World, TEXT("FinalCamera"), CameraActors);
+		
 		for (AChair* Chair : Chairs)
 		{
-			if (Chair->Character && Chair->Character->GetPlayerState() != EliminatedPlayer)
-				UE_LOG(LogTemp, Warning, TEXT("Player state win %s"), *Chair->Character->GetPlayerState()->GetPlayerName());
+			auto Character = Chair->Character;
+			if (!Character) continue;
+			
+			if (Character->GetPlayerState() == EliminatedPlayer)
+			{
+				TArray<AActor*> TargetPointActors;
+				UGameplayStatics::GetAllActorsWithTag(World, TEXT("FinalPlayerPoint"), TargetPointActors);
+				
+				if (TargetPointActors.Num() > 0)
+				{
+					FTransform TargetPointTransform = TargetPointActors[0]->GetActorTransform();
+					FVector TargetLocation = TargetPointTransform.GetLocation();
+
+					TargetPointTransform.SetLocation(FVector(TargetLocation.X, TargetLocation.Y, TargetLocation.Z + 89.f));
+					
+					Character->SetActorTransform(TargetPointTransform);
+				}
+			}
+		}
+
+		if (CameraActors.Num() > 0)
+			for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
+			{
+				It->Get()->SetViewTargetWithBlend(CameraActors[0], 0.0f);
+			}
+
+		FTimerHandle TimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(
+			TimerHandle,
+			[this]
+			{
+				DF_GameState->SetCurrentPhase(EGamePhase::NewLobby);
+				
+				FTimerHandle TimerHandle;
+				GetWorld()->GetTimerManager().SetTimer(
+					TimerHandle,
+					this,
+					&ADF_MainGamemode::StartNewLobby,
+					1.f,
+					false
+				);
+			},
+			4.f,
+			false
+		);
+	}
+}
+
+void ADF_MainGamemode::StartNewLobby()
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (auto PC = It->Get())
+		{
+			PC->SetViewTargetWithBlend(PC->GetCharacter(), 0.0f);
+			PC->GetCharacter()->GetCharacterMovement()->MovementMode = MOVE_Walking;
 		}
 	}
+	
+	for (AChair* Chair : Chairs)
+	{
+		Chair->Character = nullptr;
+		Chair->SetOwner(nullptr);
+	}
+
+	for (ABench* Bench : Benches)
+	{
+		for (ACharacter* Character : Bench->GetOccupants())
+		{
+			Bench->LeaveSeat(Character);
+		}
+	}
+
+	DF_GameState->bCanVotePause = true;
 }
 
 void ADF_MainGamemode::CountVotesPhase()
@@ -268,7 +353,7 @@ void ADF_MainGamemode::CountVotesPhase()
 
 		if (ACharacter* Character = Chair->Character)
 			if (auto PS = Character->GetPlayerState<ADF_PlayerState>())
-				if (ADF_PlayerState* VotedPS = Cast<ADF_PlayerState>(PS->VotedForPlayer))
+				if (auto VotedPS = Cast<ADF_PlayerState>(PS->VotedForPlayer))
 				{
 					int32& Count = VoteCounts.FindOrAdd(VotedPS);
 					Count++;
@@ -309,9 +394,7 @@ void ADF_MainGamemode::CountVotesPhase()
 	if (Leaders.Num() == 1)
 	{
 		EliminatedPlayer = Leaders[0];
-	}
-	else if (Leaders.Num() > 1)
-	{
+	} else if (Leaders.Num() > 1) {
 		EliminatedPlayer = Leaders[FMath::RandRange(0, Leaders.Num() - 1)];
 	}
 
@@ -349,7 +432,7 @@ void ADF_MainGamemode::AnvilOverlapPlayer_Implementation()
 			Multi_Partipant(KickedPlayer->GetPlayerState());
 			
 			Chairs.RemoveAt(i);
-			Chair->Destroy();
+			Chair->Character = nullptr;
 			break;
 		}
 	}
@@ -431,7 +514,7 @@ void ADF_MainGamemode::OnPostLogin(AController* NewPlayer)
 	}
 
 	Chairs.Empty();
-	Benchs.Empty();
+	Benches.Empty();
 	
 	TArray<AActor*> ChairActors;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AChair::StaticClass(), ChairActors);
@@ -445,7 +528,7 @@ void ADF_MainGamemode::OnPostLogin(AController* NewPlayer)
 
 	for (AActor* BenchActor : BenchActors)
 		if (auto Bench = Cast<ABench>(BenchActor))
-			Benchs.Add(Bench);
+			Benches.Add(Bench);
 
 	RestartPlayer(NewPlayer);
 

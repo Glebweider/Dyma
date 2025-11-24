@@ -27,7 +27,7 @@ void UDF_MainGameInstance::Init()
 
 	if (UGameplayStatics::DoesSaveGameExist(TEXT("FaceSlot"), 0))
 	{
-		UFaceSaveGame* LoadObject = Cast<UFaceSaveGame>(
+		auto LoadObject = Cast<UFaceSaveGame>(
 			UGameplayStatics::LoadGameFromSlot(TEXT("FaceSlot"), 0)
 		);
 

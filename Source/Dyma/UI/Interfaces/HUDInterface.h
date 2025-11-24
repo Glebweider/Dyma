@@ -36,10 +36,4 @@ public:
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
 	void SetCastVote(bool bIsVoteBtnPressed);
-
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
-	void UpdateStartPauseVote(bool bIsActive, int32 CountPlayers);
-	
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
-	void SetPauseVoteCount(int32 CountVotedPlayer);
 };

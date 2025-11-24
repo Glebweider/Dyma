@@ -3,10 +3,10 @@
 
 #include "DF_HUD.h"
 
+#include "Animation/WidgetAnimation.h"
 #include "Components/Image.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
-#include "Components/VerticalBox.h"
 #include "Dyma/Characters/Player/Interfaces/PlayerStateInterface.h"
 #include "Dyma/Core/GameState/DF_GameState.h"
 #include "Dyma/UI/Widgets/FindedSession/FindedSessionWidget.h"
@@ -83,21 +83,6 @@ void UDF_HUD::SetKickedPlayerName_Implementation(const FString& PlayerName)
 		Text_KickedPlayer->SetText(FText::Format(NSLOCTEXT("HUD", "KickedPlayer", "Бюрократ {0} уволен"), FText::FromString(PlayerName)));
 }
 
-void UDF_HUD::UpdateStartPauseVote_Implementation(bool bIsActive, int32 CountPlayers)
-{
-	if (VB_VotePause)
-		VB_VotePause->SetVisibility(bIsActive ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-
-	if (Text_CounterAllPlayer)
-		Text_CounterAllPlayer->SetText(FText::AsNumber(CountPlayers));
-}
-
-void UDF_HUD::SetPauseVoteCount_Implementation(int32 CountVotedPlayer)
-{
-	if (Text_CounterVotes)
-		Text_CounterVotes->SetText(FText::AsNumber(CountVotedPlayer));
-}
-
 void UDF_HUD::UpdateVoteProgress()
 {
 	if (!ProgressBar_Vote) return;
@@ -129,17 +114,22 @@ void UDF_HUD::UpdateCountdown()
 
 void UDF_HUD::OnPhaseChanged(EGamePhase NewPhase, int32 RoundNumber, float Duration, ACharacter* MoveForCharacter)
 {
-	if (!Text_Phase && !Text_MoveFor && !Text_Time && !Text_Vote && !Text_HelpVote && !ProgressBar_Vote && !Text_KickedPlayer) return;
+	if (!Text_Phase || !Text_MoveFor || !Text_Time ||
+	!Text_Vote || !Text_HelpVote || !ProgressBar_Vote ||
+	!Text_KickedPlayer || !StartAnimation) return;
 
 	GetWorld()->GetTimerManager().ClearTimer(CountdownTimerHandle);
-	
+
+	Img_Time->SetVisibility(ESlateVisibility::Visible);
+	Text_Phase->SetVisibility(ESlateVisibility::Visible);
 	Text_MoveFor->SetVisibility(ESlateVisibility::Visible);
 	Text_Time->SetVisibility(ESlateVisibility::Visible);
 	Text_Vote->SetVisibility(ESlateVisibility::Collapsed);
 	Text_HelpVote->SetVisibility(ESlateVisibility::Collapsed);
-	ProgressBar_Vote->SetVisibility(ESlateVisibility::Collapsed);
 	Text_KickedPlayer->SetVisibility(ESlateVisibility::Collapsed);
-	
+	ProgressBar_Vote->SetVisibility(ESlateVisibility::Collapsed);
+
+	bool bIsFinal = false;
 	FText PhaseName;
 	switch (NewPhase)
 	{
@@ -151,9 +141,6 @@ void UDF_HUD::OnPhaseChanged(EGamePhase NewPhase, int32 RoundNumber, float Durat
 				PhaseName = NSLOCTEXT("HUD", "DocReview", "0-Й КРУГ: ОЗНАКОМЛЕНИЕ");
 				Text_MoveFor->SetVisibility(ESlateVisibility::Collapsed);
 			}
-			break;
-		case EGamePhase::RoundIntro:
-			PhaseName = NSLOCTEXT("HUD", "RoundIntro", "0-Й КРУГ: ЗНАКОМСТВА");
 			break;
 		case EGamePhase::Round:
 			PhaseName = FText::Format(NSLOCTEXT("HUD", "Round", "{0}-Й КРУГ: РАСКРЫТИЕ"), RoundNumber);
@@ -209,9 +196,44 @@ void UDF_HUD::OnPhaseChanged(EGamePhase NewPhase, int32 RoundNumber, float Durat
 				}
 			}
 			break;
+		case EGamePhase::Finished:
+			{
+				bIsFinal = true;
+				PlayAnimationForward(StartAnimation);
+			}
+			break;
+		case EGamePhase::NewLobby:
+			{
+				bIsFinal = true;
+				PlayAnimationReverse(StartAnimation);
+
+				FTimerHandle TimerHandle;
+				GetWorld()->GetTimerManager().SetTimer(
+					TimerHandle,
+					[this]
+					{
+						PlayAnimationForward(StartAnimation);
+					},
+					StartAnimation->GetEndTime(),
+					false
+				);
+			}
+			break;
 		default:
 			PhaseName = NSLOCTEXT("HUD", "Unknown", "Unknown");
 			break;
+	}
+
+	if (bIsFinal)
+	{
+		Img_Time->SetVisibility(ESlateVisibility::Collapsed);
+		Text_MoveFor->SetVisibility(ESlateVisibility::Collapsed);
+		Text_Time->SetVisibility(ESlateVisibility::Collapsed);
+		Text_Phase->SetVisibility(ESlateVisibility::Collapsed);
+		Text_Vote->SetVisibility(ESlateVisibility::Collapsed);
+		Text_HelpVote->SetVisibility(ESlateVisibility::Collapsed);
+		Text_KickedPlayer->SetVisibility(ESlateVisibility::Collapsed);
+		ProgressBar_Vote->SetVisibility(ESlateVisibility::Collapsed);
 	}
 		
 	Text_Phase->SetText(PhaseName);
