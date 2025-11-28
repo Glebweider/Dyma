@@ -8,9 +8,12 @@
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "Dyma/Characters/Player/Interfaces/PlayerStateInterface.h"
+#include "Dyma/Core/Gamemodes/Main/DF_MainGamemode.h"
 #include "Dyma/Core/GameState/DF_GameState.h"
 #include "Dyma/UI/Widgets/FindedSession/FindedSessionWidget.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerState.h"
+#include "Kismet/GameplayStatics.h"
 
 void UDF_HUD::NativeConstruct()
 {
@@ -116,7 +119,7 @@ void UDF_HUD::OnPhaseChanged(EGamePhase NewPhase, int32 RoundNumber, float Durat
 {
 	if (!Text_Phase || !Text_MoveFor || !Text_Time ||
 	!Text_Vote || !Text_HelpVote || !ProgressBar_Vote ||
-	!Text_KickedPlayer || !StartAnimation) return;
+	!Text_KickedPlayer || !StartAnimation || !Text_WinnedPlayer) return;
 
 	GetWorld()->GetTimerManager().ClearTimer(CountdownTimerHandle);
 
@@ -127,6 +130,7 @@ void UDF_HUD::OnPhaseChanged(EGamePhase NewPhase, int32 RoundNumber, float Durat
 	Text_Vote->SetVisibility(ESlateVisibility::Collapsed);
 	Text_HelpVote->SetVisibility(ESlateVisibility::Collapsed);
 	Text_KickedPlayer->SetVisibility(ESlateVisibility::Collapsed);
+	Text_WinnedPlayer->SetVisibility(ESlateVisibility::Collapsed);
 	ProgressBar_Vote->SetVisibility(ESlateVisibility::Collapsed);
 
 	bool bIsFinal = false;
@@ -200,6 +204,17 @@ void UDF_HUD::OnPhaseChanged(EGamePhase NewPhase, int32 RoundNumber, float Durat
 			{
 				bIsFinal = true;
 				PlayAnimationForward(StartAnimation);
+				
+				FTimerHandle TimerHandle;
+				GetWorld()->GetTimerManager().SetTimer(
+					TimerHandle,
+					[this]
+					{
+						Text_WinnedPlayer->SetVisibility(ESlateVisibility::Visible);
+					},
+					StartAnimation->GetEndTime(),
+					false
+				);
 			}
 			break;
 		case EGamePhase::NewLobby:
@@ -233,6 +248,7 @@ void UDF_HUD::OnPhaseChanged(EGamePhase NewPhase, int32 RoundNumber, float Durat
 		Text_Vote->SetVisibility(ESlateVisibility::Collapsed);
 		Text_HelpVote->SetVisibility(ESlateVisibility::Collapsed);
 		Text_KickedPlayer->SetVisibility(ESlateVisibility::Collapsed);
+		Text_WinnedPlayer->SetVisibility(ESlateVisibility::Collapsed);
 		ProgressBar_Vote->SetVisibility(ESlateVisibility::Collapsed);
 	}
 		
@@ -241,7 +257,10 @@ void UDF_HUD::OnPhaseChanged(EGamePhase NewPhase, int32 RoundNumber, float Durat
 	if (MoveForCharacter)
 	{
 		if (auto PS = MoveForCharacter->GetPlayerState())
-			Text_MoveFor->SetText(FText::Format(NSLOCTEXT("HUD", "VoteFor", "{0}"), FText::FromString(PS->GetPlayerName().Left(10))));
+			if (NewPhase != EGamePhase::Finished)
+				Text_MoveFor->SetText(FText::Format(NSLOCTEXT("HUD", "VoteFor", "{0}"), FText::FromString(PS->GetPlayerName().Left(10))));
+			else
+				Text_WinnedPlayer->SetText(FText::Format(NSLOCTEXT("HUD", "WinnerFor", "Настоящий бюрократ {0}"), FText::FromString(PS->GetPlayerName().Left(10))));
 	} else {
 		Text_MoveFor->SetVisibility(ESlateVisibility::Collapsed);
 	}
@@ -259,4 +278,19 @@ void UDF_HUD::OnPhaseChanged(EGamePhase NewPhase, int32 RoundNumber, float Durat
 			true
 		);
 	}
+}
+
+void UDF_HUD::EndStartGame()
+{
+	if (!GetOwningPlayer() || !GetOwningPlayer()->IsLocalController())
+		return;
+	
+	if (auto Pawn = Cast<ACharacter>(GetOwningPlayerPawn())) {
+		GetOwningPlayer()->SetViewTarget(Pawn);
+		Pawn->GetCharacterMovement()->DisableMovement();
+	}
+	
+	if (GetOwningPlayerPawn()->HasAuthority())
+		if (auto GM = Cast<ADF_MainGamemode>(UGameplayStatics::GetGameMode(this)))
+			GM->StartDocReviewPhase();
 }

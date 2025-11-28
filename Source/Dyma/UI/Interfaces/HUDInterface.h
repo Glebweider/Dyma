@@ -36,4 +36,7 @@ public:
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
 	void SetCastVote(bool bIsVoteBtnPressed);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
+	void StartGame();
 };

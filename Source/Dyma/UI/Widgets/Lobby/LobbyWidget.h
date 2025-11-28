@@ -27,11 +27,8 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UButton* Btn_ApplyCreateSession;
 
-	UPROPERTY(meta = (BindWidget))
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	UButton* Btn_ExitSession;
-
-	UPROPERTY(meta = (BindWidget))
-	UWidgetSwitcher* WidgetSwitcher;
 
 	/** Functions */
 	UFUNCTION()

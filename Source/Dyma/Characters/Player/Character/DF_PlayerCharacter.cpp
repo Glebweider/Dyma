@@ -8,6 +8,7 @@
 #include "Dyma/Characters/Player/State/DF_PlayerState.h"
 #include "Dyma/Core/GameInstance/DF_MainGameInstance.h"
 #include "Dyma/Core/GameState/DF_GameState.h"
+#include "Dyma/Core/Interface/InteractInterface.h"
 #include "Dyma/Core/Structures/Face.h"
 #include "Dyma/UI/Interfaces/HUDInterface.h"
 #include "Dyma/UI/Manager/UIManager.h"
@@ -31,7 +32,10 @@ void ADF_PlayerCharacter::Tick(float DeltaSeconds)
 		CameraComponent = FindComponentByClass<UCameraComponent>();
 		if (CameraComponent)
 		{
-			float FielOfView = UKismetMathLibrary::Lerp(CameraComponent->FieldOfView, TargetFov, GetWorld()->GetDeltaSeconds() * 12.f);
+			float FielOfView = UKismetMathLibrary::Lerp(
+				UKismetMathLibrary::Clamp(CameraComponent->FieldOfView, 40, TargetFov),
+				TargetFov,
+				GetWorld()->GetDeltaSeconds() * 12.f);
 			CameraComponent->SetFieldOfView(FielOfView);
 		}
 	}
@@ -118,25 +122,60 @@ void ADF_PlayerCharacter::HandleMicrophone_Implementation(bool bIsNewMicrophone)
 
 void ADF_PlayerCharacter::HandleInteract_Implementation(bool bIsNewInteract)
 {
-	if (!bIsCastingVote)
-		GetWorldTimerManager().ClearTimer(VoteTimerHandle);
-	
-	if (bHasVoted || !HitActor) return;
-	
-	bIsCastingVote = bIsNewInteract;
-	
-	if (auto Widget = IPlayerToUIInterface::Execute_GetUI(UIManager, "HUD")) 
-		IHUDInterface::Execute_SetCastVote(Widget, bIsNewInteract);
+	if (bHasVoted)
+	{
+		/** Голосованние */
+		if (!bIsCastingVote)
+			GetWorldTimerManager().ClearTimer(VoteTimerHandle);
+		
+		if (!HitActor) return;
+		
+		bIsCastingVote = bIsNewInteract;
+		if (auto Widget = IPlayerToUIInterface::Execute_GetUI(UIManager, "HUD")) 
+			IHUDInterface::Execute_SetCastVote(Widget, bIsNewInteract);
 
-	if (bIsNewInteract) {
-		GetWorldTimerManager().SetTimer(
-			VoteCastTimerHandle,
-			this,
-			&ADF_PlayerCharacter::OnVoteCast,
-			2.0f,
-			false);
-	} else
-		GetWorldTimerManager().ClearTimer(VoteCastTimerHandle);
+		if (bIsNewInteract)
+			GetWorldTimerManager().SetTimer(
+				VoteCastTimerHandle,
+				this,
+				&ADF_PlayerCharacter::OnVoteCast,
+				2.0f,
+				false);
+		else
+			GetWorldTimerManager().ClearTimer(VoteCastTimerHandle);		
+	} else {
+		/** Интеракт */
+		if (PlayerController && CameraComponent)
+		{
+			int32 ViewportX, ViewportY;
+			FVector StartDirection, EndDirection;
+	
+			PlayerController->GetViewportSize(ViewportX, ViewportY);
+			PlayerController->DeprojectScreenPositionToWorld(ViewportX / 2, ViewportY / 2, StartDirection, EndDirection);
+
+			FRotator CameraRotation = CameraComponent->GetComponentRotation();
+			FVector End = StartDirection + (CameraRotation.Vector() * 350.0f);
+		
+			FHitResult HitResult;
+			FCollisionQueryParams CollisionParams;
+			CollisionParams.AddIgnoredActor(this);
+		
+			bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, StartDirection, End, ECC_Visibility, CollisionParams);
+			if (auto NewHitActor = HitResult.GetActor(); bHit && NewHitActor)
+			{
+				if (!NewHitActor) return;
+				if (!NewHitActor->GetClass()->ImplementsInterface(UInteractInterface::StaticClass())) return;
+				
+				Server_SetOwnerInteract(NewHitActor);
+				IInteractInterface::Execute_StartInteract(NewHitActor, this);
+			}
+		}
+	}
+}
+
+void ADF_PlayerCharacter::Server_SetOwnerInteract_Implementation(AActor* NewHitActor)
+{
+	NewHitActor->SetOwner(this);
 }
 
 void ADF_PlayerCharacter::HandleZoom_Implementation(bool bIsNewZoom)

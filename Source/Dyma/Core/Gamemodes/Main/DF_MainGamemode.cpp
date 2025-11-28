@@ -27,10 +27,41 @@ void ADF_MainGamemode::StartGame()
 	bUseSeamlessTravel = false;
 	bGameStarted = true;
 	DF_GameState = GetGameState<ADF_GameState>();
-
+	
 	if (!DF_GameState) return;
+	if (DF_GameState->Projects.Num() > 1)
+		for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+		{
+			if (auto PlayerPawn = It->Get()->GetCharacter())
+				for (AChair* Chair : Chairs)
+				{
+					if (!Chair->Character)
+					{
+						Multi_UpdateNameplate(Chair, It->Get());
+						
+						Chair->Character = Cast<ACharacter>(PlayerPawn);
+						Chair->SetOwner(It->Get());
+						Chair->Character->SetPlayerState(It->Get()->PlayerState);
 
-	IGameInstanceInterface::Execute_StartGame(GetGameInstance());
+						FVector SeatPosition = Chair->GetActorLocation() + FVector(0.f, 0.f, 85.f);
+						PlayerPawn->SetActorLocation(SeatPosition);
+
+						FVector TableCenter = FVector(300.f, -390.f, 0.f);
+						FRotator LookAtRotation = (TableCenter - SeatPosition).Rotation();
+					
+						FRotator NewRotation(0.f, LookAtRotation.Yaw, 0.f);
+						PlayerPawn->SetActorRotation(NewRotation);
+
+						PlayerPawn->GetCharacterMovement()->MovementMode = MOVE_None;
+
+						break;
+					}
+				}
+		}
+	
+	DF_GameState->Projects.Empty();
+
+	IGameInstanceInterface::Execute_SetSessionJoinAllowed(GetGameInstance(), false);
 
 	int32 NumPlayers = GetWorld()->GetNumPlayerControllers();
 	FString Url = FString::Printf(TEXT("https://swiftlylink.ru/dymax/generateTest?players=%d"), NumPlayers);
@@ -96,7 +127,7 @@ void ADF_MainGamemode::StartDocReviewPhase()
 	);
 
 	if (DF_GameState) //60
-		DF_GameState->SetPhase(EGamePhase::DocReview, 6.f, this, FName("StartRoundsPhase"));
+		DF_GameState->SetPhase(EGamePhase::DocReview, 10.f, this, FName("StartRoundsPhase"));
 }
 
 void ADF_MainGamemode::StartDocReviewPhaseDelayed()
@@ -145,11 +176,11 @@ void ADF_MainGamemode::NextSpeaker()
 {
 	ACharacter* Speaker = RoundCharacters[CurrentSpeakerIndex];
 	
-	DF_GameState->SetPhaseDuration(5.f); // 35
+	DF_GameState->SetPhaseDuration(15.f); // 35
 	DF_GameState->SetMoveForCharacter(Speaker);
 	
 	GetWorldTimerManager().SetTimer(SpeakerTimer, this,
-		&ADF_MainGamemode::PauseBeforeNext, 5.f, false); // 35
+		&ADF_MainGamemode::PauseBeforeNext, 15.f, false); // 35
 }
 
 void ADF_MainGamemode::PauseBeforeNext()
@@ -172,7 +203,7 @@ void ADF_MainGamemode::PauseBeforeNext()
 
 void ADF_MainGamemode::StartDebatPhase()
 {
-	DF_GameState->SetPhase(EGamePhase::Debate, 10.f, this, FName("StartVotePhase")); // 90
+	DF_GameState->SetPhase(EGamePhase::Debate, 90.f, this, FName("StartVotePhase")); // 90
 }
 
 void ADF_MainGamemode::StartVotePhase()
@@ -202,21 +233,25 @@ void ADF_MainGamemode::StartFinalVotePhase()
 void ADF_MainGamemode::CountFinalVotesPhase()
 {
 	TMap<ADF_PlayerState*, int32> VoteCounts;
+	
 	for (ABench* Bench : Benches)
 	{
+		if (!Bench) continue;
+
 		for (ACharacter* Character : Bench->GetOccupants())
 		{
 			if (!Character) continue;
-			
-			if (auto PS = Character->GetPlayerState<ADF_PlayerState>()) {
-				if (auto VotedPS = Cast<ADF_PlayerState>(PS->VotedForPlayer))
-				{
-					int32& Count = VoteCounts.FindOrAdd(VotedPS);
-					Count++;
-					
-					PS->VotedForPlayer = nullptr;
-				}
-			}
+
+			auto PS = Character->GetPlayerState<ADF_PlayerState>();
+			if (!PS) continue;
+
+			auto VotedPS = Cast<ADF_PlayerState>(PS->VotedForPlayer);
+			if (!VotedPS) continue;
+
+			int32& Count = VoteCounts.FindOrAdd(VotedPS);
+			Count++;
+
+			PS->VotedForPlayer = nullptr;
 		}
 	}
 	
@@ -233,81 +268,133 @@ void ADF_MainGamemode::CountFinalVotesPhase()
 			Leaders.Add(Pair.Key);
 	}
 	
-	ADF_PlayerState* EliminatedPlayer = nullptr;
+	ADF_PlayerState* EliminatedPlayer;
 	if (Leaders.Num() == 1)
 	{
 		EliminatedPlayer = Leaders[0];
 	} else if (Leaders.Num() > 1) {
 		EliminatedPlayer = Leaders[FMath::RandRange(0, Leaders.Num() - 1)];
-	} else if (Leaders.Num() == 0) {
+	} else {
+		TArray<ADF_PlayerState*> AllPlayers;
+
 		for (AChair* Chair : Chairs)
 		{
-			if (Chair->Character)
-				Leaders.Add(Cast<ADF_PlayerState>(Chair->Character->GetPlayerState()));
+			if (!Chair || !Chair->Character) continue;
 
-			if (Leaders.Num() > 1)
-				EliminatedPlayer = Leaders[FMath::RandRange(0, Leaders.Num() - 1)];
+			if (auto PS = Cast<ADF_PlayerState>(Chair->Character->GetPlayerState()))
+				AllPlayers.Add(PS);
+		}
+		
+		if (AllPlayers.Num() == 0)
+		{
+			UE_LOG(LogTemp, Error, TEXT("CountFinalVotesPhase: NO PLAYERS FOUND!"));
+			return;
+		}
+		
+		if (AllPlayers.Num() == 1)
+		{
+			EliminatedPlayer = AllPlayers[0];
+		} else {
+			EliminatedPlayer = AllPlayers[FMath::RandRange(0, AllPlayers.Num() - 1)];
 		}
 	}
 	
-	if (EliminatedPlayer)
+	if (!EliminatedPlayer)
 	{
-		const auto World = GetWorld();
-		if (!World) return;
-
-		DF_GameState->SetCurrentPhase(EGamePhase::Finished);
-
-		TArray<AActor*> CameraActors;
-		UGameplayStatics::GetAllActorsWithTag(World, TEXT("FinalCamera"), CameraActors);
-		
+		UE_LOG(LogTemp, Error, TEXT("CountFinalVotesPhase: FAILED TO CHOOSE ELIMINATED PLAYER! ABORT."));
+		return;
+	}
+	
+	ADF_PlayerState* WinnerPlayer = nullptr;
+	for (ADF_PlayerState* PS : Leaders)
+	{
+		if (PS && PS != EliminatedPlayer)
+		{
+			WinnerPlayer = PS;
+			break;
+		}
+	}
+	
+	if (!WinnerPlayer)
 		for (AChair* Chair : Chairs)
 		{
-			auto Character = Chair->Character;
-			if (!Character) continue;
-			
-			if (Character->GetPlayerState() == EliminatedPlayer)
-			{
-				TArray<AActor*> TargetPointActors;
-				UGameplayStatics::GetAllActorsWithTag(World, TEXT("FinalPlayerPoint"), TargetPointActors);
-				
-				if (TargetPointActors.Num() > 0)
-				{
-					FTransform TargetPointTransform = TargetPointActors[0]->GetActorTransform();
-					FVector TargetLocation = TargetPointTransform.GetLocation();
+			if (!Chair || !Chair->Character) continue;
 
-					TargetPointTransform.SetLocation(FVector(TargetLocation.X, TargetLocation.Y, TargetLocation.Z + 89.f));
-					
-					Character->SetActorTransform(TargetPointTransform);
-				}
+			auto PS = Cast<ADF_PlayerState>(Chair->Character->GetPlayerState());
+			if (PS && PS != EliminatedPlayer)
+			{
+				WinnerPlayer = PS;
+				break;
 			}
 		}
-
-		if (CameraActors.Num() > 0)
-			for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
-			{
-				It->Get()->SetViewTargetWithBlend(CameraActors[0], 0.0f);
-			}
-
-		FTimerHandle TimerHandle;
-		GetWorld()->GetTimerManager().SetTimer(
-			TimerHandle,
-			[this]
-			{
-				DF_GameState->SetCurrentPhase(EGamePhase::NewLobby);
-				
-				FTimerHandle TimerHandle;
-				GetWorld()->GetTimerManager().SetTimer(
-					TimerHandle,
-					this,
-					&ADF_MainGamemode::StartNewLobby,
-					1.f,
-					false
-				);
-			},
-			4.f,
-			false
-		);
+	
+	if (!WinnerPlayer)
+	{
+		UE_LOG(LogTemp, Error, TEXT("CountFinalVotesPhase: NO WINNER FOUND! ABORT."));
+		return;
 	}
+	
+	const auto World = GetWorld();
+	if (!World) return;
+
+	APlayerController* WinnerPC = WinnerPlayer->GetPlayerController();
+	if (!WinnerPC || !WinnerPC->GetCharacter())
+	{
+		UE_LOG(LogTemp, Error, TEXT("WinnerPlayer has no controller or character!"));
+		return;
+	}
+
+	DF_GameState->SetMoveForCharacter(WinnerPC->GetCharacter());
+	DF_GameState->SetCurrentPhase(EGamePhase::Finished);
+	
+	TArray<AActor*> CameraActors;
+	UGameplayStatics::GetAllActorsWithTag(World, TEXT("FinalCamera"), CameraActors);
+	
+	for (AChair* Chair : Chairs)
+	{
+		if (!Chair || !Chair->Character) continue;
+
+		if (Chair->Character->GetPlayerState() == WinnerPlayer)
+		{
+			TArray<AActor*> TargetPointActors;
+			UGameplayStatics::GetAllActorsWithTag(World, TEXT("FinalPlayerPoint"), TargetPointActors);
+
+			if (TargetPointActors.Num() > 0)
+			{
+				FTransform TargetTransform = TargetPointActors[0]->GetActorTransform();
+				FVector Location = TargetTransform.GetLocation();
+				TargetTransform.SetLocation(FVector(Location.X, Location.Y, Location.Z + 89.f));
+
+				Chair->Character->SetActorTransform(TargetTransform);
+			}
+		}
+	}
+	
+	if (CameraActors.Num() > 0)
+	{
+		for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
+			It->Get()->SetViewTargetWithBlend(CameraActors[0], 0.0f);
+	}
+	
+	FTimerHandle TimerHandle;
+	World->GetTimerManager().SetTimer(
+		TimerHandle,
+		[this]
+		{
+			DF_GameState->SetCurrentPhase(EGamePhase::NewLobby);
+
+			FTimerHandle TH;
+			GetWorld()->GetTimerManager().SetTimer(
+				TH,
+				this,
+				&ADF_MainGamemode::StartNewLobby,
+				1.f,
+				false
+			);
+		},
+		8.f,
+		false
+	);
 }
 
 void ADF_MainGamemode::StartNewLobby()
@@ -323,6 +410,7 @@ void ADF_MainGamemode::StartNewLobby()
 	
 	for (AChair* Chair : Chairs)
 	{
+		Multi_UpdateNameplate(Chair, nullptr);
 		Chair->Character = nullptr;
 		Chair->SetOwner(nullptr);
 	}
@@ -336,6 +424,10 @@ void ADF_MainGamemode::StartNewLobby()
 	}
 
 	DF_GameState->bCanVotePause = true;
+	bUseSeamlessTravel = true;
+	bGameStarted = false;
+	
+	IGameInstanceInterface::Execute_SetSessionJoinAllowed(GetGameInstance(), true);
 }
 
 void ADF_MainGamemode::CountVotesPhase()
@@ -486,7 +578,7 @@ void ADF_MainGamemode::OnPostLogin(AController* NewPlayer)
 	
 	if (bGameStarted)
 		if (APlayerController* PC = Cast<APlayerController>(NewPlayer))
-			PC->ClientTravel(TEXT("/Game/Maps/LobbyMenu"), TRAVEL_Absolute);
+			PC->ClientTravel(TEXT("/Game/Maps/Lobby"), TRAVEL_Absolute);
 	
 	if (!SessionVoiceInterface.IsValid())
 		if (IOnlineSubsystem* Subsystem = Online::GetSubsystem(GetWorld()))

@@ -26,5 +26,5 @@ public:
 	void SetPlayerFace(FName NewFaceRowName);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
-	void StartGame();
+	void SetSessionJoinAllowed(bool bAllowJoin);
 };

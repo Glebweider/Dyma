@@ -24,6 +24,7 @@ public:
 	virtual bool ShowUI_Implementation(TSubclassOf<UBaseUserWidget> WidgetClass) override;
 	virtual void HandleEscape_Implementation() override;
 	virtual void ChangeVisibilityWidgetByName_Implementation(FName WidgetName) override { ChangeVisibilityWidget(WidgetName); };
+	virtual void RemoveWidgetByName_Implementation(FName WidgetName) override;
 
 protected:
 	virtual void BeginPlay() override;

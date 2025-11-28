@@ -7,11 +7,11 @@
 #include "Dyma/Characters/Player/Interfaces/InputToPlayerInterface.h"
 #include "Dyma/Characters/Player/State/DF_PlayerState.h"
 #include "Dyma/Core/UserSettings/DF_UserSettings.h"
+#include "Dyma/UI/Interfaces/HUDInterface.h"
 #include "Dyma/UI/Manager/UIManager.h"
 #include "Dyma/UI/Widgets/Lobby/LobbyWidget.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/SpringArmComponent.h"
 #include "Net/UnrealNetwork.h"
 
 void ADF_PlayerController::BeginPlay()
@@ -90,8 +90,10 @@ void ADF_PlayerController::ClientStartGame_Implementation(const FProjectData& In
 		PS->SetProject(InProject);
 	
 	if (UIManager)
-		if (auto Widget = IPlayerToUIInterface::Execute_GetUI(UIManager, "Lobby Menu"))
-			ILobbyInterface::Execute_StartGame(Widget);
+		if (auto WidgetLobby = IPlayerToUIInterface::Execute_GetUI(UIManager, "Lobby Menu"))
+			ILobbyInterface::Execute_StartGame(WidgetLobby);
+		else if (auto WidgetHUD = IPlayerToUIInterface::Execute_GetUI(UIManager, "HUD"))
+			IHUDInterface::Execute_StartGame(WidgetHUD);
 }
 
 void ADF_PlayerController::StartInteract()

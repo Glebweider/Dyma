@@ -45,6 +45,7 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void OnVotingFinalTimer();
 
+	/** Multi RPC's */
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_StopVote();
 
@@ -54,11 +55,15 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SetFaceRow(FName RowName);
 
+	/** Server RPC's */
 	UFUNCTION(Server, Reliable)
 	void Server_SetMicrophoneActive(bool bIsActive);
 	
 	UFUNCTION(Server, Reliable)
 	void Server_SetFaceRow(FName RowName);
+
+	UFUNCTION(Server, Reliable)
+	void Server_SetOwnerInteract(AActor* NewHitActor);
 
 	UPROPERTY()
 	UCameraComponent* CameraComponent;

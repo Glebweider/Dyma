@@ -34,6 +34,9 @@ protected:
 	virtual void UpdateCountdown();  
 	virtual void UpdateVoteProgress();
 
+	UFUNCTION(BlueprintCallable)
+	virtual void EndStartGame();
+
 	FTimerHandle CountdownTimerHandle;
 	FTimerHandle VoteProgressTimer;
 	float VoteProgressElapsed = 0.f;
@@ -57,6 +60,9 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* Text_KickedPlayer;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* Text_WinnedPlayer;
 
 	UPROPERTY(meta = (BindWidget))
 	UProgressBar* ProgressBar_Vote;

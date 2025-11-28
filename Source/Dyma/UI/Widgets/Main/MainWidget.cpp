@@ -14,14 +14,10 @@ void UMainWidget::NativeConstruct()
 	MainGameInstance = GetGameInstance<UDF_MainGameInstance>();
 	
 	if (Btn_StartGame)
-	{
 		Btn_StartGame->OnClicked.AddDynamic(this, &UMainWidget::OnApplyCreateSessionClicked);
-	}
 
 	if (MainGameInstance)
-	{
 		MainGameInstance->InitUniquePlayerId();
-	}
 }
 
 void UMainWidget::OnApplyCreateSessionClicked()

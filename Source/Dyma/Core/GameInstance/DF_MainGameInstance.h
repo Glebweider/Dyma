@@ -57,7 +57,7 @@ public:
 
 	/** Interfaces */
 	virtual void SetPlayerFace_Implementation(FName NewFaceRowName) override;
-	virtual void StartGame_Implementation() override;
+	virtual void SetSessionJoinAllowed_Implementation(bool bAllowJoin) override;
 
 private:
 	IOnlineSessionPtr SessionInterface;
@@ -71,6 +71,7 @@ private:
 	/** Delegates */
 	FOnJoinSessionCompleteDelegate OnJoinSessionCompleteDelegate;
 	FDelegateHandle OnJoinSessionCompleteHandle;
+	FDelegateHandle DestroySessionDelegateHandle;
 
 	/** Internal callbacks */
 	UFUNCTION()
@@ -80,10 +81,7 @@ private:
 	void OnCreateSessionFailure();
 
 	UFUNCTION()
-	void OnDestroySessionSuccess();
-
-	UFUNCTION()
-	void OnDestroySessionFailure();
+	void OnDestroySessionComplete(FName SessionName, bool bWasSuccessful);
 
 	virtual void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result) override;
 };

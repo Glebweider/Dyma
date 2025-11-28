@@ -33,4 +33,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
 	void ChangeVisibilityWidgetByName(FName WidgetName);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
+	void RemoveWidgetByName(FName WidgetName);
 };

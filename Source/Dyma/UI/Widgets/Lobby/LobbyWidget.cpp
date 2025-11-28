@@ -18,13 +18,15 @@ void ULobbyWidget::NativeConstruct()
 	MainGameInstance = GetGameInstance<UDF_MainGameInstance>();
 	
 	if (Btn_ApplyCreateSession)
+	{
 		Btn_ApplyCreateSession->OnClicked.AddDynamic(this, &ULobbyWidget::OnApplyCreateSessionClicked);
-	
+		
+		if (GetOwningPlayer()->GetLocalRole() == ROLE_Authority)
+			Btn_ApplyCreateSession->SetVisibility(ESlateVisibility::Visible);
+	}
+
 	if (Btn_ExitSession)
 		Btn_ExitSession->OnClicked.AddDynamic(this, &ULobbyWidget::OnExitSessionClicked);
-	
-	if (WidgetSwitcher && GetOwningPlayer()->GetLocalRole() == ROLE_Authority)
-		WidgetSwitcher->SetActiveWidgetIndex(1);
 }
 
 void ULobbyWidget::OnApplyCreateSessionClicked()
@@ -33,6 +35,8 @@ void ULobbyWidget::OnApplyCreateSessionClicked()
 		if (const int32 NumPlayers = GM->GetNumPlayers(); NumPlayers > 1)
 		{
 			Btn_ApplyCreateSession->SetIsEnabled(false);
+			Btn_ExitSession->SetIsEnabled(false);
+			
 			GM->StartGame();
 		}
 }
@@ -50,7 +54,7 @@ void ULobbyWidget::EndStartGame()
 		if (HUDWidget) 
 			IPlayerToUIInterface::Execute_ShowUI(UIManager, HUDWidget);
 
-		IPlayerToUIInterface::Execute_ChangeVisibilityWidgetByName(UIManager, "Lobby Menu");
+		IPlayerToUIInterface::Execute_RemoveWidgetByName(UIManager, "Lobby Menu");
 	}
 
 	if (auto Pawn = Cast<ACharacter>(GetOwningPlayerPawn())) {

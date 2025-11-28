@@ -21,14 +21,17 @@ class DYMA_API ADF_MainGamemode : public AGameModeBase, public IGamemodeInterfac
 	GENERATED_BODY()
 
 public:
+	UFUNCTION(BlueprintCallable)
 	virtual void StartGame();
 	virtual void StartDocReviewPhase();
 	virtual void StartDocReviewPhaseDelayed();
-	virtual void StartVotePause_Implementation() override;
 	virtual void OnPostLogin(AController* NewPlayer) override;
 	virtual void RestartPlayer(AController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
+
+	/** Implements */
 	virtual void AnvilOverlapPlayer_Implementation() override;
+	virtual void StartVotePause_Implementation() override;
 
 protected:
 	UFUNCTION()

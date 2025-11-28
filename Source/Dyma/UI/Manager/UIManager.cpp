@@ -133,6 +133,27 @@ UBaseUserWidget* UUIManager::GetActivityWidgetByClass(TSubclassOf<UBaseUserWidge
 	return nullptr;
 }
 
+void UUIManager::RemoveWidgetByName_Implementation(FName WidgetName)
+{
+	if (UBaseUserWidget** FoundWidgetPtr = Widgets.Find(WidgetName))
+	{
+		UBaseUserWidget* Widget = *FoundWidgetPtr;
+        
+		if (IsValid(Widget))
+		{
+			Widget->RemoveFromParent();
+			
+			if (ActivityWidget == Widget)
+			{
+				ActivityWidget = nullptr;
+				SetInputSettings(false);
+			}
+		}
+		
+		Widgets.Remove(WidgetName);
+	}
+}
+
 void UUIManager::SetInputSettings(bool bIsUIActive)
 {
 	if (!PlayerController) return;

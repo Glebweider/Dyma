@@ -4,7 +4,6 @@
 #include "DF_MainGameInstance.h"
 #include "AdvancedSessionsLibrary.h"
 #include "CreateSessionCallbackProxyAdvanced.h"
-#include "EndSessionCallbackProxy.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSubsystemUtils.h"
 #include "Dyma/Core/UserSettings/DF_UserSettings.h"
@@ -33,9 +32,7 @@ void UDF_MainGameInstance::Init()
 
 		if (LoadObject)
 			FaceRowName = LoadObject->SavedFaceRowName;
-	}
-	else
-	{
+	} else {
 		FaceRowName = FName("Sigma");
 	}
 
@@ -92,15 +89,21 @@ void UDF_MainGameInstance::SetPlayerFace_Implementation(FName NewFaceRowName)
 	}
 }
 
-void UDF_MainGameInstance::StartGame_Implementation()
+void UDF_MainGameInstance::SetSessionJoinAllowed_Implementation(bool bAllowJoin)
 {
-	if (FOnlineSessionSettings* CurrentSettings = SessionInterface->GetSessionSettings(NAME_GameSession))
-	{
-		CurrentSettings->bAllowJoinInProgress = false;
-		CurrentSettings->bShouldAdvertise = false;
+	if (!SessionInterface.IsValid())
+		return;
 
-		SessionInterface->UpdateSession(NAME_GameSession, *CurrentSettings, true);
-	}
+	FOnlineSessionSettings* CurrentSettings =
+		SessionInterface->GetSessionSettings(NAME_GameSession);
+
+	if (!CurrentSettings)
+		return;
+
+	CurrentSettings->bAllowJoinInProgress = bAllowJoin;
+	CurrentSettings->bShouldAdvertise = bAllowJoin;
+
+	SessionInterface->UpdateSession(NAME_GameSession, *CurrentSettings, true);
 }
 
 void UDF_MainGameInstance::AdvancedCreateSession(const FString& SessionName)
@@ -148,29 +151,41 @@ void UDF_MainGameInstance::AdvancedCreateSession(const FString& SessionName)
 
 void UDF_MainGameInstance::AdvancedDestroySession()
 {
-	if (!SessionInterface.IsValid()) return;
-	
+	IOnlineSubsystem* OnlineSub = Online::GetSubsystem(GetWorld());
+	if (!OnlineSub)
+		return;
+ 
+	SessionInterface = OnlineSub->GetSessionInterface();
+	if (!SessionInterface.IsValid())
+		return;
+
 	if (SessionInterface->GetNamedSession(NAME_GameSession))
 	{
-		UEndSessionCallbackProxy* EndSessionProxy = UEndSessionCallbackProxy::EndSession(this, UGameplayStatics::GetPlayerController(GetWorld(), 0));
-		if (!EndSessionProxy) return;
-		
-		EndSessionProxy->OnSuccess.AddDynamic(this, &UDF_MainGameInstance::OnDestroySessionSuccess);
-		EndSessionProxy->OnFailure.AddDynamic(this, &UDF_MainGameInstance::OnDestroySessionFailure);
-		EndSessionProxy->Activate();
+		if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+			if (AGameSession* GameSession = GetWorld()->GetAuthGameMode() ? GetWorld()->GetAuthGameMode()->GameSession : nullptr)
+				GameSession->UnregisterPlayer(PC);
+ 
+		DestroySessionDelegateHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(
+			FOnDestroySessionCompleteDelegate::CreateUObject(this, &UDF_MainGameInstance::OnDestroySessionComplete)
+		);
+ 
+		SessionInterface->DestroySession(NAME_GameSession);
 	}
 }
 
-void UDF_MainGameInstance::OnDestroySessionSuccess()
+void UDF_MainGameInstance::OnDestroySessionComplete(FName SessionName, bool bWasSuccessful)
 {
-	UE_LOG(LogTemp, Log, TEXT("Session successfully destroyed."));
-	
-	GetWorld()->ServerTravel(TEXT("/Game/Maps/LobbyMenu"), true);
-}
-
-void UDF_MainGameInstance::OnDestroySessionFailure()
-{
-	UE_LOG(LogTemp, Warning, TEXT("Failed to destroy session."));
+	if (IOnlineSubsystem* OnlineSub = Online::GetSubsystem(GetWorld()))
+		if (SessionInterface = OnlineSub->GetSessionInterface(); SessionInterface.IsValid())
+			SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(DestroySessionDelegateHandle);
+ 
+	if (bWasSuccessful)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Session successfully destroyed."));
+		GetWorld()->ServerTravel(TEXT("/Game/Maps/Lobby"), true);
+	} else {
+		UE_LOG(LogTemp, Warning, TEXT("Failed to destroy session."));
+	}
 }
 
 void UDF_MainGameInstance::OnCreateSessionSuccess()
