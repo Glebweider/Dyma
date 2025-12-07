@@ -13,6 +13,24 @@ ABook::ABook()
 	PrimaryActorTick.bCanEverTick = false;
 }
 
+void ABook::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (!GetWorld()) return;
+	
+	FString LevelName = FPackageName::GetShortName(GetWorld()->GetMapName());
+	if (LevelName == TEXT("Main"))
+	{
+		TArray<FName> TagsToRemove = { "Page1", "Page4", "Page5" };
+		for (const FName& Tag : TagsToRemove)
+		{
+			if (auto Widget = FindComponentByTag<UWidgetComponent>(Tag))
+				Widget->DestroyComponent();
+		}
+	}
+}
+
 void ABook::Server_OpenBookAndPage_Implementation(EBookPage BookPage)
 {
 	Multi_OpenBookAndPage(BookPage);
@@ -83,9 +101,7 @@ void ABook::AddPages(EPages PageType, TArray<UWidgetComponent*> WidgetComponents
 				break;
 			}
 		}
-	}
-	else
-	{
+	} else {
 		Pages.Add(PageType, WidgetComponents);
 	}
 }

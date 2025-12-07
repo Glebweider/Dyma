@@ -271,7 +271,7 @@ void ADF_PlayerCharacter::OnVotingTimer_Implementation()
 		{
 			if (!NewHitActor || bHasVoted || bIsCastingVote || NewHitActor == HitActor) return;
 			
-			ACharacter* NewCharacter = Cast<ACharacter>(NewHitActor);
+			auto NewCharacter = Cast<ACharacter>(NewHitActor);
 			if (!NewCharacter) return;
 			
 			if (!IPlayerStateInterface::Execute_GetIsParticipant(NewCharacter->GetPlayerState())) return;

@@ -30,6 +30,8 @@ public:
 	void AddPages(EPages BookPage, TArray<UWidgetComponent*> WidgetComponents);
 
 protected:
+	virtual void BeginPlay() override;
+	
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_OpenBookAndPage(EBookPage BookPage);
 	
