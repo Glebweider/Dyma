@@ -2,6 +2,7 @@
 
 
 #include "Bench.h"
+#include "Dyma/Characters/Player/Interfaces/PlayerAnimInstanceInterface.h"
 #include "GameFramework/Character.h"
 
 
@@ -49,6 +50,8 @@ bool ABench::SeatPlayer(ACharacter* Player)
 void ABench::LeaveSeat(ACharacter* Player)
 {
 	if (!Player) return;
+
+	IPlayerAnimInstanceInterface::Execute_SetIsSitting(Player->GetMesh()->GetAnimInstance(), false);
 
 	for (int32 i = 0; i < Occupants.Num(); ++i)
 	{

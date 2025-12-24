@@ -5,6 +5,7 @@
 #include "OnlineSubsystem.h"
 #include "OnlineSubsystemUtils.h"
 #include "Camera/CameraComponent.h"
+#include "Dyma/Characters/Player/Interfaces/PlayerAnimInstanceInterface.h"
 #include "Dyma/Characters/Player/State/DF_PlayerState.h"
 #include "Dyma/Core/GameInstance/DF_MainGameInstance.h"
 #include "Dyma/Core/GameState/DF_GameState.h"
@@ -13,7 +14,6 @@
 #include "Dyma/UI/Interfaces/HUDInterface.h"
 #include "Dyma/UI/Manager/UIManager.h"
 #include "Interfaces/VoiceInterface.h"
-#include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "Net/VoiceConfig.h"
 
@@ -27,18 +27,13 @@ void ADF_PlayerCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	if (IsLocallyControlled())
-	{
-		CameraComponent = FindComponentByClass<UCameraComponent>();
-		if (CameraComponent)
+	if (IsLocallyControlled() && CameraComponent)
+		if (FMath::Abs(CameraComponent->FieldOfView - TargetFov) > 0.01f)
 		{
-			float FielOfView = UKismetMathLibrary::Lerp(
-				UKismetMathLibrary::Clamp(CameraComponent->FieldOfView, 40, TargetFov),
-				TargetFov,
-				GetWorld()->GetDeltaSeconds() * 12.f);
-			CameraComponent->SetFieldOfView(FielOfView);
+			CameraComponent->SetFieldOfView(FMath::FInterpTo(CameraComponent->FieldOfView, TargetFov, DeltaSeconds, 12.f));
+		} else {
+			CameraComponent->SetFieldOfView(TargetFov);
 		}
-	}
 }
 
 void ADF_PlayerCharacter::BeginPlay()
@@ -165,8 +160,10 @@ void ADF_PlayerCharacter::HandleInteract_Implementation(bool bIsNewInteract)
 			{
 				if (!NewHitActor) return;
 				if (!NewHitActor->GetClass()->ImplementsInterface(UInteractInterface::StaticClass())) return;
+
+
+					Server_SetOwnerInteract(NewHitActor);
 				
-				Server_SetOwnerInteract(NewHitActor);
 				IInteractInterface::Execute_StartInteract(NewHitActor, this);
 			}
 		}
@@ -235,6 +232,16 @@ void ADF_PlayerCharacter::StartFinalVoteRound_Implementation()
 		0.2f,
 		true
 	);
+}
+
+void ADF_PlayerCharacter::UpdateAnimSitting_Implementation(bool bIsNewSitting)
+{
+	Multi_UpdateAnimSitting(bIsNewSitting);
+}
+
+void ADF_PlayerCharacter::Multi_UpdateAnimSitting_Implementation(bool bIsNewSitting)
+{
+	IPlayerAnimInstanceInterface::Execute_SetIsSitting(GetMesh()->GetAnimInstance(), bIsNewSitting);
 }
 
 void ADF_PlayerCharacter::KickedPlayerName_Implementation(const FString& PlayerName)

@@ -6,6 +6,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "Dyma/Characters/Player/Interfaces/InputToPlayerInterface.h"
 #include "Dyma/Characters/Player/State/DF_PlayerState.h"
+#include "Dyma/Core/Interface/WorldItemInterface.h"
 #include "Dyma/Core/UserSettings/DF_UserSettings.h"
 #include "Dyma/UI/Interfaces/HUDInterface.h"
 #include "Dyma/UI/Manager/UIManager.h"
@@ -137,6 +138,9 @@ void ADF_PlayerController::StartJump()
 {
 	if (ControlledCharacter)
 		ControlledCharacter->Jump();
+	
+	if (AActor* SeatActor = IPlayerStateInterface::Execute_GetActorSeat(PlayerState))
+		IWorldItemInterface::Execute_LeaveSeat(SeatActor, ControlledCharacter);
 }
 
 void ADF_PlayerController::StopJump()

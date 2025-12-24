@@ -18,8 +18,12 @@ class DYMA_API ADF_PlayerState : public APlayerState, public IPlayerStateInterfa
 
 public:
 	virtual FProjectData GetProjectData_Implementation() override { return Project; };
-	virtual bool GetIsParticipant_Implementation() override { return bIsParticipant;};
-	virtual void SetIsParticipant_Implementation(bool bNewValue) override { bIsParticipant = bNewValue; };
+	virtual bool GetIsParticipant_Implementation() override { return bIsParticipant; };
+	virtual float GetAlkoDuration_Implementation() override { return AlkoDuration; };
+	virtual AActor* GetActorSeat_Implementation() override { return ActorSeat; };
+	virtual void SetIsParticipant_Implementation(bool bIsNewParticipant) override { bIsParticipant = bIsNewParticipant; };
+	virtual void SetAlkoDuration_Implementation(float NewDuration) override { AlkoDuration = NewDuration; };
+	virtual void SetActorSeat_Implementation(AActor* NewActor) override;
 	
 	UPROPERTY(Replicated, BlueprintReadOnly, Category="Voting")
 	APlayerState* VotedForPlayer = nullptr;
@@ -39,7 +43,16 @@ public:
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
+	UFUNCTION()
+	void OnRep_ActorSeat();
+
 	TMap<FString, bool> ProjectFlags;
+
+	UPROPERTY(ReplicatedUsing=OnRep_ActorSeat)
+	AActor* ActorSeat;
+
+	UPROPERTY(Replicated)
+	float AlkoDuration;
 
 	UPROPERTY(Replicated)
 	bool bIsParticipant = true;

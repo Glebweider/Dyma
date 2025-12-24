@@ -23,6 +23,18 @@ class DYMA_API IPlayerStateInterface
 public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
 	FProjectData GetProjectData();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
+	float GetAlkoDuration();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
+	void SetAlkoDuration(float NewDuration);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
+	AActor* GetActorSeat();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
+	void SetActorSeat(AActor* NewActor);
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
 	bool GetIsParticipant();

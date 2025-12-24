@@ -11,6 +11,17 @@ void ADF_PlayerState::Server_SetVote_Implementation(APlayerState* TargetPlayer)
 	VotedForPlayer = TargetPlayer;
 }
 
+void ADF_PlayerState::SetActorSeat_Implementation(AActor* NewActor)
+{
+	ActorSeat = NewActor;
+	UE_LOG(LogTemp, Warning, TEXT("SERVER SET SEAT: %s"), *GetNameSafe(NewActor));
+}
+
+void ADF_PlayerState::OnRep_ActorSeat()
+{
+	UE_LOG(LogTemp, Error, TEXT("CLIENT GOT SEAT: %s"), *GetNameSafe(ActorSeat));
+}
+
 void ADF_PlayerState::SetProject(const FProjectData& InProject)
 {
 	Project = InProject;
@@ -33,6 +44,7 @@ void ADF_PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ADF_PlayerState, VotedForPlayer);
+	DOREPLIFETIME(ADF_PlayerState, AlkoDuration);
 	DOREPLIFETIME(ADF_PlayerState, bIsParticipant);
 	DOREPLIFETIME(ADF_PlayerState, FaceRowName);
 }

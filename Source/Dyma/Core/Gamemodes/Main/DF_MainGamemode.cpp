@@ -361,6 +361,8 @@ void ADF_MainGamemode::CountFinalVotesPhase()
 
 			if (TargetPointActors.Num() > 0)
 			{
+				IToPlayerInterface::Execute_UpdateAnimSitting(Chair->Character, false);
+				
 				FTransform TargetTransform = TargetPointActors[0]->GetActorTransform();
 				FVector Location = TargetTransform.GetLocation();
 				TargetTransform.SetLocation(FVector(Location.X, Location.Y, Location.Z + 89.f));
@@ -410,6 +412,9 @@ void ADF_MainGamemode::StartNewLobby()
 	
 	for (AChair* Chair : Chairs)
 	{
+		if (Chair->Character)
+			IToPlayerInterface::Execute_UpdateAnimSitting(Chair->Character, false);
+		
 		Multi_UpdateNameplate(Chair, nullptr);
 		Chair->Character = nullptr;
 		Chair->SetOwner(nullptr);

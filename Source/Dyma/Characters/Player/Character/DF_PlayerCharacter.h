@@ -25,6 +25,7 @@ public:
 	
 	virtual void StartVoteRound_Implementation() override;
 	virtual void StartFinalVoteRound_Implementation() override;
+	virtual void UpdateAnimSitting_Implementation(bool bIsNewSitting) override;
 	virtual void StopVoteRound_Implementation() override;
 	virtual void KickedPlayerName_Implementation(const FString& PlayerName) override;
 	virtual void ApplyFaceByRow_Implementation(FName RowName) override;
@@ -48,6 +49,9 @@ protected:
 	/** Multi RPC's */
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_StopVote();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_UpdateAnimSitting(bool bIsNewSitting);
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SetMicrophoneActive(bool bIsActive);
