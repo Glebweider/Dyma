@@ -27,7 +27,8 @@ void ADF_MainGamemode::StartGame()
 	bUseSeamlessTravel = false;
 	bGameStarted = true;
 	DF_GameState = GetGameState<ADF_GameState>();
-	
+
+	UE_LOG(LogTemp, Warning, TEXT("1"));
 	if (!DF_GameState) return;
 	if (DF_GameState->Projects.Num() > 1)
 		for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
@@ -42,6 +43,9 @@ void ADF_MainGamemode::StartGame()
 						Chair->Character = Cast<ACharacter>(PlayerPawn);
 						Chair->SetOwner(It->Get());
 						Chair->Character->SetPlayerState(It->Get()->PlayerState);
+						
+						IToPlayerInterface::Execute_SetSittingPoses(Chair->Character, ESittingPoses::Default);
+						IToPlayerInterface::Execute_UpdateAnimSitting(Chair->Character, true);
 
 						FVector SeatPosition = Chair->GetActorLocation() + FVector(0.f, 0.f, 85.f);
 						PlayerPawn->SetActorLocation(SeatPosition);
@@ -60,58 +64,72 @@ void ADF_MainGamemode::StartGame()
 		}
 	
 	DF_GameState->Projects.Empty();
-
 	IGameInstanceInterface::Execute_SetSessionJoinAllowed(GetGameInstance(), false);
 
 	int32 NumPlayers = GetWorld()->GetNumPlayerControllers();
 	FString Url = FString::Printf(TEXT("https://swiftlylink.ru/dymax/generateTest?players=%d"), NumPlayers);
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(Url);
-	Request->SetVerb(TEXT("GET"));
-	Request->SetHeader(TEXT("User-Agent"), TEXT("UnrealEngine/5"));
-	Request->SetHeader(TEXT("Accept"), TEXT("application/json"));
+	
+    Request->SetURL(Url);
+    Request->SetVerb(TEXT("GET"));
+    Request->SetHeader(TEXT("User-Agent"), TEXT("UnrealEngine/5"));
+    Request->SetHeader(TEXT("Accept"), TEXT("application/json"));
+    Request->OnProcessRequestComplete().BindLambda(
+        [this](FHttpRequestPtr Req, FHttpResponsePtr Resp, bool bWasSuccessful)
+        {
+            if (!bWasSuccessful || !Resp.IsValid() || Resp->GetResponseCode() != 200) return;
 
-	Request->OnProcessRequestComplete().BindLambda(
-		[this](FHttpRequestPtr Req, FHttpResponsePtr Resp, bool bWasSuccessful)
-		{
-			if (!Resp.IsValid() || !bWasSuccessful || Resp->GetResponseCode() != 200) return;
+            FString JsonStr = Resp->GetContentAsString();
 
-			TArray<TSharedPtr<FJsonValue>> JsonArray;
-			FString JsonStr = Resp->GetContentAsString();
+            TSharedPtr<FJsonObject> RootObject;
+            const TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(JsonStr);
+        	
+            if (!FJsonSerializer::Deserialize(Reader, RootObject) || !RootObject.IsValid()) return;
+        	
+            FString Event;
+            if (RootObject->TryGetStringField(TEXT("event"), Event))
+                DF_GameState->CurrentEvent = Event;
+        	
+            const TArray<TSharedPtr<FJsonValue>>* DataArray;
+            if (!RootObject->TryGetArrayField(TEXT("data"), DataArray)) return;
+        	
+            for (const TSharedPtr<FJsonValue>& Value : *DataArray)
+            {
+                if (!Value.IsValid()) continue;
 
-			if (FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(JsonStr), JsonArray))
-			{
-				for (auto& JsonValue : JsonArray)
-				{
-					if (!JsonValue.IsValid()) continue;
+                const TSharedPtr<FJsonObject> Obj = Value->AsObject();
+                if (!Obj.IsValid()) continue;
 
-					FProjectData Project;
-					auto Obj = JsonValue->AsObject();
+                FProjectData Project;
 
-					Obj->TryGetStringField(TEXT("status"), Project.Status);
-					Obj->TryGetStringField(TEXT("goal"), Project.Goal);
-					Obj->TryGetStringField(TEXT("consequence"), Project.Consequence);
-					Obj->TryGetStringField(TEXT("implementation"), Project.Implementation);
-					Obj->TryGetStringField(TEXT("financing"), Project.Financing);
-					Obj->TryGetStringField(TEXT("support"), Project.Support);
+                Obj->TryGetStringField(TEXT("status"), Project.Status);
+                Obj->TryGetStringField(TEXT("goal"), Project.Goal);
+                Obj->TryGetStringField(TEXT("consequence"), Project.Consequence);
+                Obj->TryGetStringField(TEXT("implementation"), Project.Implementation);
+                Obj->TryGetStringField(TEXT("financing"), Project.Financing);
+                Obj->TryGetStringField(TEXT("support"), Project.Support);
 
-					DF_GameState->Projects.Add(Project);
-				}
+                DF_GameState->Projects.Add(Project);
+            }
+        	
+            int32 ProjectIndex = 0;
+            for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+            {
+                ADF_PlayerController* PC = Cast<ADF_PlayerController>(It->Get());
+                if (!PC) continue;
+            	
+                if (DF_GameState->Projects.IsValidIndex(ProjectIndex))
+                {
+                    PC->Client_StartGame(DF_GameState->Projects[ProjectIndex]);
+                    ProjectIndex++;
+                }
+            }
 
-				int32 ProjectIndex = 0;
-				for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-				{
-					if (auto PC = Cast<ADF_PlayerController>(It->Get()))
-						if (DF_GameState->Projects.IsValidIndex(ProjectIndex))
-						{
-							PC->ClientStartGame(DF_GameState->Projects[ProjectIndex]);
-							ProjectIndex++;
-						}
-				}
-			}
-		});
-
+            UE_LOG(LogTemp, Log, TEXT("Projects generated. Event: %s"), *DF_GameState->CurrentEvent);
+        }
+    );
+	
 	Request->ProcessRequest();
 }
 
@@ -362,6 +380,8 @@ void ADF_MainGamemode::CountFinalVotesPhase()
 			if (TargetPointActors.Num() > 0)
 			{
 				IToPlayerInterface::Execute_UpdateAnimSitting(Chair->Character, false);
+				IToPlayerInterface::Execute_SetSittingPoses(Chair->Character, ESittingPoses::Default);
+				IToPlayerInterface::Execute_SetAnimWinPose(Chair->Character);
 				
 				FTransform TargetTransform = TargetPointActors[0]->GetActorTransform();
 				FVector Location = TargetTransform.GetLocation();
@@ -413,7 +433,10 @@ void ADF_MainGamemode::StartNewLobby()
 	for (AChair* Chair : Chairs)
 	{
 		if (Chair->Character)
+		{
+			IToPlayerInterface::Execute_SetSittingPoses(Chair->Character, ESittingPoses::Default);
 			IToPlayerInterface::Execute_UpdateAnimSitting(Chair->Character, false);
+		}
 		
 		Multi_UpdateNameplate(Chair, nullptr);
 		Chair->Character = nullptr;
@@ -504,6 +527,8 @@ void ADF_MainGamemode::CountVotesPhase()
 		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
 		FVector PlayerLocation = EliminatedPlayer->GetPawn()->GetActorLocation();
+
+		IToPlayerInterface::Execute_SetSittingPoses(KickedPlayer, ESittingPoses::Bench);
 		
 		FVector Location(PlayerLocation.X, PlayerLocation.Y, PlayerLocation.Z + 200.f);
 		FRotator Rotation = FRotator::ZeroRotator;

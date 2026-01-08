@@ -13,6 +13,7 @@
 #include "Dyma/Core/Structures/Face.h"
 #include "Dyma/UI/Interfaces/HUDInterface.h"
 #include "Dyma/UI/Manager/UIManager.h"
+#include "Dyma//Core/Enums/SittingPoses.h"
 #include "Interfaces/VoiceInterface.h"
 #include "Net/UnrealNetwork.h"
 #include "Net/VoiceConfig.h"
@@ -51,8 +52,8 @@ void ADF_PlayerCharacter::BeginPlay()
 
 		RegisterRemoteTalker(PlayerController->PlayerState);
 	}
-
-	if (auto CharacterMesh = GetComponentByClass<UStaticMeshComponent>())
+	
+	if (auto CharacterMesh = GetComponentByClass<USkeletalMeshComponent>())
 		if (UMaterialInterface* BaseMaterial = CharacterMesh->GetMaterial(0))
 		{
 			CharacterMaterial = UMaterialInstanceDynamic::Create(BaseMaterial, this);
@@ -115,29 +116,64 @@ void ADF_PlayerCharacter::HandleMicrophone_Implementation(bool bIsNewMicrophone)
 	Server_SetMicrophoneActive(bIsNewMicrophone);
 }
 
+void ADF_PlayerCharacter::Server_SetOwnerInteract_Implementation(AActor* NewHitActor)
+{
+	NewHitActor->SetOwner(this);
+}
+
+void ADF_PlayerCharacter::OnVoteCast()
+{
+	bHasVoted = true;
+	bIsVoting = false;
+	
+	if (auto Widget = IPlayerToUIInterface::Execute_GetUI(UIManager, "HUD")) {
+		IHUDInterface::Execute_SetCastVote(Widget, false);
+		IHUDInterface::Execute_SetHelpVoteTextVisible(Widget);
+	}
+	
+	if (auto PS = PlayerController->GetPlayerState<ADF_PlayerState>())
+		if (auto TargetPlayerState = Cast<ACharacter>(HitActor))
+			PS->Server_SetVote(TargetPlayerState->GetPlayerState());
+}
+
+void ADF_PlayerCharacter::RegisterRemoteTalker(APlayerState* RemotePlayerState)
+{
+	if (!RemotePlayerState) return;
+
+	if (IOnlineSubsystem* OSS = Online::GetSubsystem(GetWorld()))
+		if (auto Voice = OSS->GetVoiceInterface())
+		{
+			TSharedPtr<const FUniqueNetId> RemoteId = RemotePlayerState->GetUniqueId().GetUniqueNetId();
+			if (RemoteId.IsValid())
+				Voice->RegisterRemoteTalker(*RemoteId);
+		}
+}
+
 void ADF_PlayerCharacter::HandleInteract_Implementation(bool bIsNewInteract)
 {
-	if (bHasVoted)
+	if (bIsVoting)
 	{
 		/** Голосованние */
 		if (!bIsCastingVote)
 			GetWorldTimerManager().ClearTimer(VoteTimerHandle);
 		
-		if (!HitActor) return;
+		if (bHasVoted || !HitActor) return;
 		
 		bIsCastingVote = bIsNewInteract;
 		if (auto Widget = IPlayerToUIInterface::Execute_GetUI(UIManager, "HUD")) 
 			IHUDInterface::Execute_SetCastVote(Widget, bIsNewInteract);
 
 		if (bIsNewInteract)
+		{
 			GetWorldTimerManager().SetTimer(
-				VoteCastTimerHandle,
-				this,
-				&ADF_PlayerCharacter::OnVoteCast,
-				2.0f,
-				false);
-		else
-			GetWorldTimerManager().ClearTimer(VoteCastTimerHandle);		
+			VoteCastTimerHandle,
+			this,
+			&ADF_PlayerCharacter::OnVoteCast,
+			2.0f,
+			false);
+		} else {
+			GetWorldTimerManager().ClearTimer(VoteCastTimerHandle);
+		}
 	} else {
 		/** Интеракт */
 		if (PlayerController && CameraComponent)
@@ -160,9 +196,8 @@ void ADF_PlayerCharacter::HandleInteract_Implementation(bool bIsNewInteract)
 			{
 				if (!NewHitActor) return;
 				if (!NewHitActor->GetClass()->ImplementsInterface(UInteractInterface::StaticClass())) return;
-
-
-					Server_SetOwnerInteract(NewHitActor);
+				
+				Server_SetOwnerInteract(NewHitActor);
 				
 				IInteractInterface::Execute_StartInteract(NewHitActor, this);
 			}
@@ -170,28 +205,9 @@ void ADF_PlayerCharacter::HandleInteract_Implementation(bool bIsNewInteract)
 	}
 }
 
-void ADF_PlayerCharacter::Server_SetOwnerInteract_Implementation(AActor* NewHitActor)
-{
-	NewHitActor->SetOwner(this);
-}
-
 void ADF_PlayerCharacter::HandleZoom_Implementation(bool bIsNewZoom)
 {
 	TargetFov = bIsNewZoom ? 40.f : 100.f;
-}
-
-void ADF_PlayerCharacter::OnVoteCast()
-{
-	bHasVoted = true;
-	
-	if (auto Widget = IPlayerToUIInterface::Execute_GetUI(UIManager, "HUD")) {
-		IHUDInterface::Execute_SetCastVote(Widget, false);
-		IHUDInterface::Execute_SetHelpVoteTextVisible(Widget);
-	}
-
-	if (auto PS = PlayerController->GetPlayerState<ADF_PlayerState>())
-		if (auto TargetPlayerState = Cast<ACharacter>(HitActor))
-			PS->Server_SetVote(TargetPlayerState->GetPlayerState());
 }
 
 void ADF_PlayerCharacter::StopVoteRound_Implementation()
@@ -203,9 +219,30 @@ void ADF_PlayerCharacter::StopVoteRound_Implementation()
 
 void ADF_PlayerCharacter::Multi_StopVote_Implementation()
 {
+	bIsVoting = false;
 	bHasVoted = false;
 	bIsCastingVote = false;
 	HitActor = nullptr;
+}
+
+void ADF_PlayerCharacter::SetAnimWinPose_Implementation()
+{
+	Multi_SetAnimWinPose();
+}
+
+void ADF_PlayerCharacter::Multi_SetAnimWinPose_Implementation()
+{
+	PlayAnimMontage(WinMontage);
+}
+
+void ADF_PlayerCharacter::SetSittingPoses_Implementation(ESittingPoses NewPoses)
+{
+	Multi_SetSittingPoses(NewPoses);
+}
+
+void ADF_PlayerCharacter::Multi_SetSittingPoses_Implementation(ESittingPoses NewPoses)
+{
+	IPlayerAnimInstanceInterface::Execute_SetSittingPoses(GetMesh()->GetAnimInstance(), NewPoses);
 }
 
 void ADF_PlayerCharacter::StartVoteRound_Implementation()
@@ -215,7 +252,7 @@ void ADF_PlayerCharacter::StartVoteRound_Implementation()
 	GetWorld()->GetTimerManager().SetTimer(
 		VoteTimerHandle,
 		this,
-		&ADF_PlayerCharacter::OnVotingTimer,
+		&ADF_PlayerCharacter::Multi_OnVotingTimer,
 		0.2f,
 		true
 	);
@@ -228,7 +265,7 @@ void ADF_PlayerCharacter::StartFinalVoteRound_Implementation()
 	GetWorld()->GetTimerManager().SetTimer(
 		VoteTimerHandle,
 		this,
-		&ADF_PlayerCharacter::OnVotingFinalTimer,
+		&ADF_PlayerCharacter::Multi_OnVotingTimer,
 		0.2f,
 		true
 	);
@@ -241,6 +278,8 @@ void ADF_PlayerCharacter::UpdateAnimSitting_Implementation(bool bIsNewSitting)
 
 void ADF_PlayerCharacter::Multi_UpdateAnimSitting_Implementation(bool bIsNewSitting)
 {
+	bIsSitting = bIsNewSitting;
+	
 	IPlayerAnimInstanceInterface::Execute_SetIsSitting(GetMesh()->GetAnimInstance(), bIsNewSitting);
 }
 
@@ -253,50 +292,11 @@ void ADF_PlayerCharacter::KickedPlayerName_Implementation(const FString& PlayerN
 			IHUDInterface::Execute_SetKickedPlayerName(HUDWidget, PlayerName);
 }
 
-void ADF_PlayerCharacter::OnVotingTimer_Implementation()
+void ADF_PlayerCharacter::Multi_OnVotingTimer_Implementation()
 {
 	if (!PlayerController)
 		PlayerController = Cast<APlayerController>(GetController());
 	
-	if (PlayerController && CameraComponent)
-	{
-		int32 ViewportX, ViewportY;
-		FVector StartDirection, EndDirection;
-	
-		PlayerController->GetViewportSize(ViewportX, ViewportY);
-		PlayerController->DeprojectScreenPositionToWorld(ViewportX / 2, ViewportY / 2, StartDirection, EndDirection);
-
-		FRotator CameraRotation = CameraComponent->GetComponentRotation();
-		FVector End = StartDirection + (CameraRotation.Vector() * 700.0f);
-		
-		FHitResult HitResult;
-		FCollisionQueryParams CollisionParams;
-		CollisionParams.AddIgnoredActor(this);
-		
-		bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, StartDirection, End, ECC_Visibility, CollisionParams);
-		if (auto NewHitActor = HitResult.GetActor(); bHit && NewHitActor)
-		{
-			if (!NewHitActor || bHasVoted || bIsCastingVote || NewHitActor == HitActor) return;
-			
-			auto NewCharacter = Cast<ACharacter>(NewHitActor);
-			if (!NewCharacter) return;
-			
-			if (!IPlayerStateInterface::Execute_GetIsParticipant(NewCharacter->GetPlayerState())) return;
-			
-			auto HUDWidget = IPlayerToUIInterface::Execute_GetUI(UIManager, "HUD");
-			if (!HUDWidget) return;
-			
-			HitActor = NewHitActor;
-
-			if (PlayerController->IsLocalPlayerController())
-				IHUDInterface::Execute_SetVoteText(HUDWidget, NewCharacter->GetPlayerState()->GetPlayerName().Left(10));
-		}
-	}
-}
-
-void ADF_PlayerCharacter::OnVotingFinalTimer_Implementation()
-{
-	if (!PlayerController) PlayerController = Cast<APlayerController>(GetController());
 	if (PlayerController && CameraComponent)
 	{
 		int32 ViewportX, ViewportY;
@@ -315,9 +315,9 @@ void ADF_PlayerCharacter::OnVotingFinalTimer_Implementation()
 		bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, StartDirection, End, ECC_Visibility, CollisionParams);
 		if (auto NewHitActor = HitResult.GetActor(); bHit && NewHitActor)
 		{
-			if (!NewHitActor || bHasVoted || bIsCastingVote || NewHitActor == HitActor) return;
+			if (bHasVoted || bIsCastingVote || NewHitActor == HitActor) return;
 			
-			ACharacter* NewCharacter = Cast<ACharacter>(NewHitActor);
+			auto NewCharacter = Cast<ACharacter>(NewHitActor);
 			if (!NewCharacter) return;
 			
 			if (!IPlayerStateInterface::Execute_GetIsParticipant(NewCharacter->GetPlayerState())) return;
@@ -326,24 +326,12 @@ void ADF_PlayerCharacter::OnVotingFinalTimer_Implementation()
 			if (!HUDWidget) return;
 			
 			HitActor = NewHitActor;
+			bIsVoting = true;
 			
 			if (PlayerController->IsLocalPlayerController())
 				IHUDInterface::Execute_SetVoteText(HUDWidget, NewCharacter->GetPlayerState()->GetPlayerName().Left(10));
 		}
 	}
-}
-
-void ADF_PlayerCharacter::RegisterRemoteTalker(APlayerState* RemotePlayerState)
-{
-	if (!RemotePlayerState) return;
-
-	if (IOnlineSubsystem* OSS = Online::GetSubsystem(GetWorld()))
-		if (auto Voice = OSS->GetVoiceInterface())
-		{
-			TSharedPtr<const FUniqueNetId> RemoteId = RemotePlayerState->GetUniqueId().GetUniqueNetId();
-			if (RemoteId.IsValid())
-				Voice->RegisterRemoteTalker(*RemoteId);
-		}
 }
 
 void ADF_PlayerCharacter::Server_SetMicrophoneActive_Implementation(bool bIsActive)
@@ -367,6 +355,7 @@ void ADF_PlayerCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimePrope
 
 	DOREPLIFETIME(ADF_PlayerCharacter, HitActor);
 	DOREPLIFETIME(ADF_PlayerCharacter, bHasVoted);
+	DOREPLIFETIME(ADF_PlayerCharacter, bIsSitting);
 	DOREPLIFETIME(ADF_PlayerCharacter, bIsCastingVote);
 	DOREPLIFETIME(ADF_PlayerCharacter, FaceOpenTexture);
 	DOREPLIFETIME(ADF_PlayerCharacter, FaceCloseTexture);

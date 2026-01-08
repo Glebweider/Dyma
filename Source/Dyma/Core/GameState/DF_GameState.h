@@ -28,6 +28,9 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<FProjectData> Projects;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString CurrentEvent;
 	
 	UPROPERTY(BlueprintAssignable, Category="Phase")
 	FOnPhaseChanged OnPhaseChanged;

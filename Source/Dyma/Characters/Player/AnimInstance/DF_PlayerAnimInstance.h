@@ -4,8 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
+#include "Dyma//Core/Enums/SittingPoses.h"
 #include "Dyma/Characters/Player/Interfaces/PlayerAnimInstanceInterface.h"
 #include "DF_PlayerAnimInstance.generated.h"
+
 
 class UCharacterMovementComponent;
 /**
@@ -18,6 +20,7 @@ class DYMA_API UDF_PlayerAnimInstance : public UAnimInstance, public IPlayerAnim
 
 public:
 	virtual void SetIsSitting_Implementation(bool bIsNewSitting) override { bIsSitting = bIsNewSitting; };
+	virtual void SetSittingPoses_Implementation(ESittingPoses NewPoses) override { SittingPoses = NewPoses; };
 
 protected:
 	virtual void NativeInitializeAnimation() override;
@@ -37,6 +40,9 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	FVector Velocity;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	ESittingPoses SittingPoses;
 
 private:
 	UPROPERTY()

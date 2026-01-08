@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Dyma/Core/Enums/SittingPoses.h"
 #include "UObject/Interface.h"
 #include "ToPlayerInterface.generated.h"
 
@@ -21,6 +22,15 @@ class DYMA_API IToPlayerInterface
 	GENERATED_BODY()
 
 public:
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
+	void SetSittingPoses(ESittingPoses NewPoses);
+	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
+	bool GetIsSitting();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
+	void SetAnimWinPose();
+	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
 	void StartVoteRound();
 

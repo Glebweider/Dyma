@@ -22,7 +22,11 @@ class DYMA_API ADF_PlayerCharacter : public ACharacter, public IInputToPlayerInt
 
 public:
 	ADF_PlayerCharacter();
-	
+
+	/* Interfaces */
+	virtual bool GetIsSitting_Implementation() override { return bIsSitting; };
+	virtual void SetAnimWinPose_Implementation() override;
+	virtual void SetSittingPoses_Implementation(ESittingPoses NewPoses) override;
 	virtual void StartVoteRound_Implementation() override;
 	virtual void StartFinalVoteRound_Implementation() override;
 	virtual void UpdateAnimSitting_Implementation(bool bIsNewSitting) override;
@@ -34,17 +38,11 @@ public:
 	virtual void HandleZoom_Implementation(bool bIsNewZoom) override;
 
 protected:
-	virtual void Tick(float DeltaSeconds) override;
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
 	virtual void OnVoteCast();
 	virtual void RegisterRemoteTalker(APlayerState* RemotePlayerState);
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
-	
-	UFUNCTION(NetMulticast, Reliable)
-	void OnVotingTimer();
-
-	UFUNCTION(NetMulticast, Reliable)
-	void OnVotingFinalTimer();
 
 	/** Multi RPC's */
 	UFUNCTION(NetMulticast, Reliable)
@@ -54,10 +52,19 @@ protected:
 	void Multi_UpdateAnimSitting(bool bIsNewSitting);
 
 	UFUNCTION(NetMulticast, Reliable)
+	void Multi_SetSittingPoses(ESittingPoses NewPoses);
+
+	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SetMicrophoneActive(bool bIsActive);
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SetFaceRow(FName RowName);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_SetAnimWinPose();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_OnVotingTimer();
 
 	/** Server RPC's */
 	UFUNCTION(Server, Reliable)
@@ -84,6 +91,9 @@ protected:
 	UPROPERTY(Replicated)
 	UTexture2D* FaceCloseTexture;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UAnimMontage* WinMontage;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="UI")
 	TSubclassOf<UBaseUserWidget> LobbyWidget;
 	
@@ -93,11 +103,17 @@ protected:
 private:
 	FTimerHandle VoteTimerHandle;
 	FTimerHandle VoteCastTimerHandle;
-
+	
 	float TargetFov = 90.f;
 
 	UPROPERTY()
 	UUIManager* UIManager;
+
+	UPROPERTY(Replicated)
+	bool bIsSitting = true;
+
+	UPROPERTY(Replicated)
+	bool bIsVoting = false;
 	
 	UPROPERTY(Replicated)
 	bool bHasVoted;

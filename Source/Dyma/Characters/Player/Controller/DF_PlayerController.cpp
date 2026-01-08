@@ -80,7 +80,7 @@ void ADF_PlayerController::SetupInputComponent()
 	}
 }
 
-void ADF_PlayerController::ClientStartGame_Implementation(const FProjectData& InProject)
+void ADF_PlayerController::Client_StartGame_Implementation(const FProjectData& InProject)
 {
 	SetIgnoreLookInput(false);
 
@@ -95,18 +95,6 @@ void ADF_PlayerController::ClientStartGame_Implementation(const FProjectData& In
 			ILobbyInterface::Execute_StartGame(WidgetLobby);
 		else if (auto WidgetHUD = IPlayerToUIInterface::Execute_GetUI(UIManager, "HUD"))
 			IHUDInterface::Execute_StartGame(WidgetHUD);
-}
-
-void ADF_PlayerController::StartInteract()
-{
-	if (ControlledCharacter)
-		IInputToPlayerInterface::Execute_HandleInteract(ControlledCharacter, true);
-}
-
-void ADF_PlayerController::StopInteract()
-{
-	if (ControlledCharacter)
-		IInputToPlayerInterface::Execute_HandleInteract(ControlledCharacter, false);
 }
 
 void ADF_PlayerController::Move(const FInputActionValue& Value)
@@ -131,7 +119,19 @@ void ADF_PlayerController::Look(const FInputActionValue& Value)
 	float MouseSensitivity = UserSettings->GetMouseSensitivity();
 	
 	AddYawInput(LookAxis.X * MouseSensitivity);
-	AddPitchInput(LookAxis.Y * MouseSensitivity);		
+	AddPitchInput(LookAxis.Y * MouseSensitivity);
+}
+
+void ADF_PlayerController::StartInteract()
+{
+	if (ControlledCharacter)
+		IInputToPlayerInterface::Execute_HandleInteract(ControlledCharacter, true);
+}
+
+void ADF_PlayerController::StopInteract()
+{
+	if (ControlledCharacter)
+		IInputToPlayerInterface::Execute_HandleInteract(ControlledCharacter, false);
 }
 
 void ADF_PlayerController::StartJump()
@@ -182,5 +182,6 @@ void ADF_PlayerController::StopZoom()
 void ADF_PlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	
 	DOREPLIFETIME(ADF_PlayerController, ControlledCharacter);
 }

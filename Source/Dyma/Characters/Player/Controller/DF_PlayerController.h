@@ -19,8 +19,9 @@ class DYMA_API ADF_PlayerController : public APlayerController
 	GENERATED_BODY()
 
 public:
+	/** Client RPC's */
 	UFUNCTION(Client, Reliable)
-	void ClientStartGame(const FProjectData& InProject);
+	void Client_StartGame(const FProjectData& InProject);
 
 protected:
 	virtual void BeginPlay() override;
@@ -29,6 +30,9 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
+	float SittingBaseYaw = 0.f;
+	bool bCachedSitting = false;
+
 	UPROPERTY()
 	UDF_UserSettings* UserSettings;
 	
