@@ -27,6 +27,11 @@ void ADF_PlayerState::SetProject(const FProjectData& InProject)
 	Project = InProject;
 }
 
+void ADF_PlayerState::SetEvent(const FString InEvent)
+{
+	Event = InEvent;
+}
+
 void ADF_PlayerState::OnRep_FaceRow()
 {
 	APawn* Pawn = GetPawn();

@@ -21,7 +21,7 @@ class DYMA_API ADF_PlayerController : public APlayerController
 public:
 	/** Client RPC's */
 	UFUNCTION(Client, Reliable)
-	void Client_StartGame(const FProjectData& InProject);
+	void Client_StartGame(const FProjectData& InProject, const FString& InEvent);
 
 protected:
 	virtual void BeginPlay() override;

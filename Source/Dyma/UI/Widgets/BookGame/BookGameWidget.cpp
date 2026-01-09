@@ -9,6 +9,8 @@ void UBookGameWidget::NativePreConstruct()
 {
 	Super::NativeConstruct();
 
-	if (GetOwningPlayer() && GetOwningPlayer()->PlayerState)
+	if (GetOwningPlayer() && GetOwningPlayer()->PlayerState) {
 		Project = IPlayerStateInterface::Execute_GetProjectData(GetOwningPlayer()->PlayerState);
+		Event = IPlayerStateInterface::Execute_GetProjectEvent(GetOwningPlayer()->PlayerState);
+	}
 }

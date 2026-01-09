@@ -21,4 +21,7 @@ public:
 protected:
 	UPROPERTY(BlueprintReadWrite)
 	FProjectData Project;
+
+	UPROPERTY(BlueprintReadWrite)
+	FString Event;
 };

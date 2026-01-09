@@ -18,6 +18,7 @@ class DYMA_API ADF_PlayerState : public APlayerState, public IPlayerStateInterfa
 
 public:
 	virtual FProjectData GetProjectData_Implementation() override { return Project; };
+	virtual FString GetProjectEvent_Implementation() override { return Event; };
 	virtual bool GetIsParticipant_Implementation() override { return bIsParticipant; };
 	virtual float GetAlkoDuration_Implementation() override { return AlkoDuration; };
 	virtual AActor* GetActorSeat_Implementation() override { return ActorSeat; };
@@ -36,6 +37,9 @@ public:
 
 	UFUNCTION()
 	void SetProject(const FProjectData& InProject);
+
+	UFUNCTION()
+	void SetEvent(const FString InEvent);
 
 	UFUNCTION()
 	void OnRep_FaceRow();
@@ -59,4 +63,7 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Voting")
 	FProjectData Project;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Voting")
+	FString Event;
 };

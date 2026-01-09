@@ -27,8 +27,7 @@ void ADF_MainGamemode::StartGame()
 	bUseSeamlessTravel = false;
 	bGameStarted = true;
 	DF_GameState = GetGameState<ADF_GameState>();
-
-	UE_LOG(LogTemp, Warning, TEXT("1"));
+	
 	if (!DF_GameState) return;
 	if (DF_GameState->Projects.Num() > 1)
 		for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
@@ -121,7 +120,7 @@ void ADF_MainGamemode::StartGame()
             	
                 if (DF_GameState->Projects.IsValidIndex(ProjectIndex))
                 {
-                    PC->Client_StartGame(DF_GameState->Projects[ProjectIndex]);
+                    PC->Client_StartGame(DF_GameState->Projects[ProjectIndex], DF_GameState->CurrentEvent);
                     ProjectIndex++;
                 }
             }

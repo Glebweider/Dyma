@@ -80,7 +80,7 @@ void ADF_PlayerController::SetupInputComponent()
 	}
 }
 
-void ADF_PlayerController::Client_StartGame_Implementation(const FProjectData& InProject)
+void ADF_PlayerController::Client_StartGame_Implementation(const FProjectData& InProject, const FString& InEvent)
 {
 	SetIgnoreLookInput(false);
 
@@ -88,7 +88,10 @@ void ADF_PlayerController::Client_StartGame_Implementation(const FProjectData& I
 	SetInputMode(FInputModeGameOnly());
 	
 	if (auto PS = Cast<ADF_PlayerState>(PlayerState))
+	{
 		PS->SetProject(InProject);
+		PS->SetEvent(InEvent);
+	}
 	
 	if (UIManager)
 		if (auto WidgetLobby = IPlayerToUIInterface::Execute_GetUI(UIManager, "Lobby Menu"))

@@ -25,6 +25,9 @@ public:
 	FProjectData GetProjectData();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
+	FString GetProjectEvent();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
 	float GetAlkoDuration();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Interfaces")
