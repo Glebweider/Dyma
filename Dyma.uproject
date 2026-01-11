@@ -330,10 +330,6 @@
 			"Enabled": false
 		},
 		{
-			"Name": "Niagara",
-			"Enabled": false
-		},
-		{
 			"Name": "ResonanceAudio",
 			"Enabled": false
 		},
