@@ -31,14 +31,13 @@ void UUserFaceSlotWidget::HandleFaceRowChanged(FName NewFaceRowName)
 
 	if (NewFaceRowName == RowName)
 	{
-		FSlateColor Color = FSlateColor(FLinearColor(0.48f, 0.00f, 0.11f, 1.00f));
+		FSlateColor Color = FSlateColor(FLinearColor(0.51f, 0.00f, 0.11f, 1.00f));
 		
 		Brush.OutlineSettings.Width = 5.f;
 		Brush.OutlineSettings.Color = Color;
 		
 		Text->SetColorAndOpacity(Color);
-	} else
-	{
+	} else {
 		Brush.OutlineSettings.Width = 0.f;
 
 		Text->SetColorAndOpacity(FLinearColor(0.f, 0.0f, 0.f, 1.00f));

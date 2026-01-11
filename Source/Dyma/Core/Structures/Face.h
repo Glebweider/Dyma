@@ -9,6 +9,9 @@ struct DYMA_API FFaceData : public FTableRowBase
 	GENERATED_BODY()
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UTexture2D* FacePreview;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	UTexture2D* FaceOpen;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)

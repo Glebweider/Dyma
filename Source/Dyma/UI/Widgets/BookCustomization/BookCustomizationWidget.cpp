@@ -29,9 +29,7 @@ void UBookCustomizationWidget::NativeConstruct()
 	{
 		FName RowName = OutRowNames[i];
 		static const FString ContextString(TEXT("Getting FaceData Row"));
-		FFaceData* RowTable = TableFaces->FindRow<FFaceData>(RowName, ContextString);
-		if (RowTable)
-		{
+		if (FFaceData* RowTable = TableFaces->FindRow<FFaceData>(RowName, ContextString))
 			if (auto Widget = CreateWidget<UUserFaceSlotWidget>(PC, UserFaceSlotWidget))
 			{
 				GameInstance->OnFaceRowNameChanged.AddDynamic(Widget, &UUserFaceSlotWidget::HandleFaceRowChanged);
@@ -41,14 +39,13 @@ void UBookCustomizationWidget::NativeConstruct()
 				int32 Col = LocalIndex % Columns;
 
 				Widget->SetRowName(RowName);
-				Widget->SetImage(RowTable->FaceClose);
+				Widget->SetImage(RowTable->FacePreview);
 				
 				if (RowName == GameInstance->FaceRowName)
 					Widget->HandleFaceRowChanged(RowName);
 
 				UniformGridPanel->AddChildToUniformGrid(Widget, Row, Col);
 			}
-		}
 	}
 }
 
