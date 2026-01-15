@@ -31,7 +31,7 @@ void ABench::BeginPlay()
 bool ABench::SeatPlayer(ACharacter* Player)
 {
 	if (!Player) return false;
-
+	
 	for (int32 i = 0; i < SeatPoints.Num(); ++i)
 	{
 		if (Occupants[i] == nullptr)

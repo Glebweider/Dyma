@@ -63,6 +63,7 @@ void ADF_MainGamemode::StartGame()
 		}
 	
 	DF_GameState->Projects.Empty();
+	DF_GameState->bCanVotePause = false;
 	IGameInstanceInterface::Execute_SetSessionJoinAllowed(GetGameInstance(), false);
 
 	int32 NumPlayers = GetWorld()->GetNumPlayerControllers();

@@ -118,6 +118,8 @@ void ADF_PlayerCharacter::HandleMicrophone_Implementation(bool bIsNewMicrophone)
 
 void ADF_PlayerCharacter::Server_SetOwnerInteract_Implementation(AActor* NewHitActor)
 {
+	if (!NewHitActor) return;
+	
 	NewHitActor->SetOwner(this);
 }
 
