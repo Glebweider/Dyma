@@ -7,11 +7,12 @@
 #include "Dyma/UI/Widgets/BaseUser/BaseUserWidget.h"
 #include "DF_HUD.generated.h"
 
+class UBorder;
+class UTextBlock;
 class UVerticalBox;
 class UProgressBar;
 class UImage;
 enum class EGamePhase : uint8;
-class UTextBlock;
 /**
  * 
  */
@@ -47,6 +48,9 @@ protected:
 	UTextBlock* Text_Phase;
 
 	UPROPERTY(meta = (BindWidget))
+	UTextBlock* Text_TempPhase;
+
+	UPROPERTY(meta = (BindWidget))
 	UTextBlock* Text_MoveFor;
 
 	UPROPERTY(meta = (BindWidget))
@@ -75,6 +79,9 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Transient, meta = (BindWidgetAnim))
 	UWidgetAnimation* StartAnimation;
+
+	UPROPERTY(BlueprintReadOnly, Transient, meta = (BindWidgetAnim))
+	UWidgetAnimation* StartTempPhaseAnimation;
 	
 	UFUNCTION()
 	void OnPhaseChanged(EGamePhase NewPhase, int32 RoundNumber, float Duration, ACharacter* MoveForCharacter);

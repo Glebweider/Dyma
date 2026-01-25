@@ -203,8 +203,8 @@ void ADF_MainGamemode::NextSpeaker()
 
 void ADF_MainGamemode::PauseBeforeNext()
 {
-	DF_GameState->SetPhaseDuration(5.f);
 	DF_GameState->SetMoveForCharacter(nullptr);
+	DF_GameState->SetPhaseDuration(5.f);
 	
 	if (CurrentSpeakerIndex + 1 >= RoundCharacters.Num())
 	{

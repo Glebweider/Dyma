@@ -119,7 +119,7 @@ void UDF_HUD::OnPhaseChanged(EGamePhase NewPhase, int32 RoundNumber, float Durat
 {
 	if (!Text_Phase || !Text_MoveFor || !Text_Time ||
 	!Text_Vote || !Text_HelpVote || !ProgressBar_Vote ||
-	!Text_KickedPlayer || !StartAnimation || !Text_WinnedPlayer) return;
+	!Text_KickedPlayer || !StartAnimation || !Text_WinnedPlayer || !Text_TempPhase) return;
 
 	GetWorld()->GetTimerManager().ClearTimer(CountdownTimerHandle);
 
@@ -143,22 +143,36 @@ void UDF_HUD::OnPhaseChanged(EGamePhase NewPhase, int32 RoundNumber, float Durat
 		case EGamePhase::DocReview:
 			{
 				PhaseName = NSLOCTEXT("HUD", "DocReview", "0-Й КРУГ: ОЗНАКОМЛЕНИЕ");
+				Text_TempPhase->SetText(NSLOCTEXT("HUD", "DocReview", "ОЗНАКОМЛЕНИЕ"));
+				PlayAnimationForward(StartTempPhaseAnimation);
 				Text_MoveFor->SetVisibility(ESlateVisibility::Collapsed);
 			}
 			break;
 		case EGamePhase::Round:
 			PhaseName = FText::Format(NSLOCTEXT("HUD", "Round", "{0}-Й КРУГ: РАСКРЫТИЕ"), RoundNumber);
+
+			if (IsValid(MoveForCharacter))
+				if (auto PS = MoveForCharacter->GetPlayerState())
+				{
+					Text_TempPhase->SetText(FText::Format(NSLOCTEXT("HUD", "Round", "РАСКРЫТИЕ: {0}"), FText::FromString(PS->GetPlayerName().Left(10))));
+					PlayAnimationForward(StartTempPhaseAnimation);
+				}
+		
 			break;
 		case EGamePhase::Debate:
 			{
 				PhaseName = FText::Format(NSLOCTEXT("HUD", "Debate", "{0}-Й КРУГ: ОБСУЖДЕНИЕ"), RoundNumber);
 				Text_MoveFor->SetVisibility(ESlateVisibility::Collapsed);
+				Text_TempPhase->SetText(NSLOCTEXT("HUD", "Debate", "ОБСУЖДЕНИЕ"));
+				PlayAnimationForward(StartTempPhaseAnimation);
 			}
 			break;
 		case EGamePhase::Vote:
 			{
 				PhaseName = FText::Format(NSLOCTEXT("HUD", "Vote", "{0}-Й КРУГ: ГОЛОСОВАНИЕ"), RoundNumber);
 				Text_Vote->SetText(NSLOCTEXT("HUD", "VoteText", "ГОЛОС ПРОТИВ:"));
+				Text_TempPhase->SetText(NSLOCTEXT("HUD", "Vote", "ГОЛОСОВАНИЕ"));
+				PlayAnimationForward(StartTempPhaseAnimation);
 				
 				Text_MoveFor->SetVisibility(ESlateVisibility::Collapsed);
 				
@@ -190,6 +204,8 @@ void UDF_HUD::OnPhaseChanged(EGamePhase NewPhase, int32 RoundNumber, float Durat
 			{
 				PhaseName = NSLOCTEXT("HUD", "Vote", "Финальное ГОЛОСОВАНИЕ");
 				Text_Vote->SetText(NSLOCTEXT("HUD", "VoteText", "ГОЛОС ПРОТИВ:"));
+				Text_TempPhase->SetText(NSLOCTEXT("HUD", "Vote", "Финальное ГОЛОСОВАНИЕ"));
+				PlayAnimationForward(StartTempPhaseAnimation);
 					
 				Text_MoveFor->SetVisibility(ESlateVisibility::Collapsed);
 					
