@@ -3,7 +3,9 @@
 
 #include "UIManager.h"
 #include "Blueprint/UserWidget.h"
+#include "Dyma/Core/Interface/GameStateInterface.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/GameStateBase.h"
 
 
 UUIManager::UUIManager()
@@ -89,16 +91,13 @@ void UUIManager::HandleEscape_Implementation()
 	}
 	
 	if (!PauseMenuWidget) return;
-
 	if (auto PauseWidget = GetActivityWidgetByClass(PauseMenuWidget))
 	{
 		bool bIsVisible = PauseWidget->IsVisible();
 		PauseWidget->SetVisibility(bIsVisible ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 		ActivityWidget = bIsVisible ? nullptr : PauseWidget;
 		SetInputSettings(!bIsVisible);
-	}
-	else if (auto NewPauseWidget = CreateWidget<UBaseUserWidget>(PlayerController, PauseMenuWidget))
-	{
+	} else if (auto NewPauseWidget = CreateWidget<UBaseUserWidget>(PlayerController, PauseMenuWidget)) {
 		NewPauseWidget->AddToViewport();
 		Widgets.Add(NewPauseWidget->WidgetName, NewPauseWidget);
 		ActivityWidget = NewPauseWidget;
@@ -109,7 +108,6 @@ void UUIManager::HandleEscape_Implementation()
 void UUIManager::ChangeVisibilityWidget(FName WidgetName)
 {
 	if (UBaseUserWidget** FoundWidget = Widgets.Find(WidgetName))
-	{
 		if (IsValid(*FoundWidget))
 		{
 			bool bVisible = (*FoundWidget)->IsVisible();
@@ -118,7 +116,6 @@ void UUIManager::ChangeVisibilityWidget(FName WidgetName)
 			if ((*FoundWidget)->bCanBlockedInput)
 				SetInputSettings(!bVisible);
 		}
-	}
 }
 
 UBaseUserWidget* UUIManager::GetActivityWidgetByClass(TSubclassOf<UBaseUserWidget> WidgetClass)
@@ -160,9 +157,14 @@ void UUIManager::SetInputSettings(bool bIsUIActive)
 
 	if (PlayerController->GetLocalPlayer())
 	{
-		if (APawn* Pawn = PlayerController->GetPawn())
-			if (UCharacterMovementComponent* Movement = Pawn->FindComponentByClass<UCharacterMovementComponent>())
-				Movement->DisableMovement();
+		if (IGameStateInterface::Execute_CanVotePause(GetWorld()->GetGameState()))
+			if (auto Movement = PlayerController->GetPawn()->FindComponentByClass<UCharacterMovementComponent>())
+				if (bIsUIActive)
+				{
+					Movement->DisableMovement();
+				} else {
+					Movement->SetMovementMode(MOVE_Walking);
+				}
 		
 		PlayerController->SetIgnoreLookInput(bIsUIActive);
 		PlayerController->bShowMouseCursor = bIsUIActive;

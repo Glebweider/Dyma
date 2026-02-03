@@ -22,6 +22,7 @@
 #include "Interfaces/IHttpResponse.h"
 #include "Kismet/GameplayStatics.h"
 
+
 void ADF_MainGamemode::StartGame()
 {
 	bUseSeamlessTravel = false;
@@ -42,7 +43,8 @@ void ADF_MainGamemode::StartGame()
 						Chair->Character = Cast<ACharacter>(PlayerPawn);
 						Chair->SetOwner(It->Get());
 						Chair->Character->SetPlayerState(It->Get()->PlayerState);
-						
+
+						Multi_Partipant(It->Get()->PlayerState, true);
 						IToPlayerInterface::Execute_SetSittingPoses(Chair->Character, ESittingPoses::Default);
 						IToPlayerInterface::Execute_UpdateAnimSitting(Chair->Character, true);
 
@@ -125,8 +127,6 @@ void ADF_MainGamemode::StartGame()
                     ProjectIndex++;
                 }
             }
-
-            UE_LOG(LogTemp, Log, TEXT("Projects generated. Event: %s"), *DF_GameState->CurrentEvent);
         }
     );
 	
@@ -145,7 +145,7 @@ void ADF_MainGamemode::StartDocReviewPhase()
 	);
 
 	if (DF_GameState) //60
-		DF_GameState->SetPhase(EGamePhase::DocReview, 60.f, this, FName("StartRoundsPhase"));
+		DF_GameState->SetPhase(EGamePhase::DocReview, 10.f, this, FName("StartRoundsPhase"));
 }
 
 void ADF_MainGamemode::StartDocReviewPhaseDelayed()
@@ -175,7 +175,8 @@ void ADF_MainGamemode::StartRoundsPhase()
 	for (AChair* Chair : Chairs)
 	{
 		if (ACharacter* Character = Chair->Character)
-			RoundCharacters.Add(Character);
+			if (IPlayerStateInterface::Execute_GetIsParticipant(Character->GetPlayerState()))
+				RoundCharacters.Add(Character);
 	}
 	
 	if (RoundCharacters.Num() == 2)
@@ -194,11 +195,11 @@ void ADF_MainGamemode::NextSpeaker()
 {
 	ACharacter* Speaker = RoundCharacters[CurrentSpeakerIndex];
 	
-	DF_GameState->SetPhaseDuration(35.f); // 35
+	DF_GameState->SetPhaseDuration(5.f); // 45
 	DF_GameState->SetMoveForCharacter(Speaker);
 	
 	GetWorldTimerManager().SetTimer(SpeakerTimer, this,
-		&ADF_MainGamemode::PauseBeforeNext, 35.f, false); // 35
+		&ADF_MainGamemode::PauseBeforeNext, 5.f, false); // 45
 }
 
 void ADF_MainGamemode::PauseBeforeNext()
@@ -221,12 +222,13 @@ void ADF_MainGamemode::PauseBeforeNext()
 
 void ADF_MainGamemode::StartDebatPhase()
 {
-	DF_GameState->SetPhase(EGamePhase::Debate, 90.f, this, FName("StartVotePhase")); // 90
+	float Time = RoundCharacters.Num() * 5.f; // 15
+	DF_GameState->SetPhase(EGamePhase::Debate, Time, this, FName("StartVotePhase"));
 }
 
 void ADF_MainGamemode::StartVotePhase()
 {
-	DF_GameState->SetPhase(EGamePhase::Vote, 30.f, this, FName("CountVotesPhase")); // 30
+	DF_GameState->SetPhase(EGamePhase::Vote, 10.f, this, FName("CountVotesPhase")); // 30
 
 	for (AChair* Chair : Chairs) {
 		if (ACharacter* Character = Chair->Character)
@@ -236,7 +238,7 @@ void ADF_MainGamemode::StartVotePhase()
 
 void ADF_MainGamemode::StartFinalVotePhase()
 {
-	DF_GameState->SetPhase(EGamePhase::FinalVote, 30.f, this, FName("CountFinalVotesPhase")); //30
+	DF_GameState->SetPhase(EGamePhase::FinalVote, 15.f, this, FName("CountFinalVotesPhase")); //60
 	
 	for (ABench* Bench : Benches)
 	{
@@ -300,7 +302,8 @@ void ADF_MainGamemode::CountFinalVotesPhase()
 			if (!Chair || !Chair->Character) continue;
 
 			if (auto PS = Cast<ADF_PlayerState>(Chair->Character->GetPlayerState()))
-				AllPlayers.Add(PS);
+				if (IPlayerStateInterface::Execute_GetIsParticipant(PS))
+					AllPlayers.Add(PS);
 		}
 		
 		if (AllPlayers.Num() == 0)
@@ -339,11 +342,12 @@ void ADF_MainGamemode::CountFinalVotesPhase()
 			if (!Chair || !Chair->Character) continue;
 
 			auto PS = Cast<ADF_PlayerState>(Chair->Character->GetPlayerState());
-			if (PS && PS != EliminatedPlayer)
-			{
-				WinnerPlayer = PS;
-				break;
-			}
+			if (PS && IPlayerStateInterface::Execute_GetIsParticipant(PS))
+				if (PS != EliminatedPlayer)
+				{
+					WinnerPlayer = PS;
+					break;
+				}
 		}
 	
 	if (!WinnerPlayer)
@@ -450,7 +454,7 @@ void ADF_MainGamemode::StartNewLobby()
 			Bench->LeaveSeat(Character);
 		}
 	}
-
+	
 	DF_GameState->bCanVotePause = true;
 	bUseSeamlessTravel = true;
 	bGameStarted = false;
@@ -551,10 +555,8 @@ void ADF_MainGamemode::AnvilOverlapPlayer_Implementation()
 		AChair* Chair = Chairs[i];
 		if (Chair && Chair->Character == KickedPlayer)
 		{
-			Multi_Partipant(KickedPlayer->GetPlayerState());
+			Multi_Partipant(KickedPlayer->GetPlayerState(), false);
 			
-			Chairs.RemoveAt(i);
-			Chair->Character = nullptr;
 			break;
 		}
 	}
@@ -576,9 +578,9 @@ void ADF_MainGamemode::AnvilOverlapPlayer_Implementation()
 	GetWorldTimerManager().SetTimer(DelayHandle, this, &ADF_MainGamemode::StartRoundsPhase, 3.0f, false);
 }
 
-void ADF_MainGamemode::Multi_Partipant_Implementation(APlayerState* PS)
+void ADF_MainGamemode::Multi_Partipant_Implementation(APlayerState* PS, bool newIsPartipant)
 {
-	IPlayerStateInterface::Execute_SetIsParticipant(PS, false);
+	IPlayerStateInterface::Execute_SetIsParticipant(PS, newIsPartipant);
 }
 
 void ADF_MainGamemode::Multi_UpdateNameplate_Implementation(AChair* Chair, AController* NewPlayer)

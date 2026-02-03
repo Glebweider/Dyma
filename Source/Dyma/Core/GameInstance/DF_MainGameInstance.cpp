@@ -152,40 +152,50 @@ void UDF_MainGameInstance::AdvancedCreateSession(const FString& SessionName)
 void UDF_MainGameInstance::AdvancedDestroySession()
 {
 	IOnlineSubsystem* OnlineSub = Online::GetSubsystem(GetWorld());
-	if (!OnlineSub)
-		return;
- 
+	if (!OnlineSub) return;
+	
 	SessionInterface = OnlineSub->GetSessionInterface();
-	if (!SessionInterface.IsValid())
-		return;
+	if (!SessionInterface.IsValid()) return;
 
 	if (SessionInterface->GetNamedSession(NAME_GameSession))
 	{
-		if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
-			if (AGameSession* GameSession = GetWorld()->GetAuthGameMode() ? GetWorld()->GetAuthGameMode()->GameSession : nullptr)
-				GameSession->UnregisterPlayer(PC);
- 
-		DestroySessionDelegateHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(
-			FOnDestroySessionCompleteDelegate::CreateUObject(this, &UDF_MainGameInstance::OnDestroySessionComplete)
-		);
- 
+		DestroySessionDelegateHandle =
+			SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(
+				FOnDestroySessionCompleteDelegate::CreateUObject(
+					this,
+					&UDF_MainGameInstance::OnDestroySessionComplete
+				)
+			);
+
 		SessionInterface->DestroySession(NAME_GameSession);
+	} else {
+		OnDestroySessionComplete(NAME_GameSession, true);
 	}
 }
 
 void UDF_MainGameInstance::OnDestroySessionComplete(FName SessionName, bool bWasSuccessful)
 {
-	if (IOnlineSubsystem* OnlineSub = Online::GetSubsystem(GetWorld()))
-		if (SessionInterface = OnlineSub->GetSessionInterface(); SessionInterface.IsValid())
-			SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(DestroySessionDelegateHandle);
- 
-	if (bWasSuccessful)
+	if (IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get())
 	{
-		UE_LOG(LogTemp, Log, TEXT("Session successfully destroyed."));
-		GetWorld()->ServerTravel(TEXT("/Game/Maps/Lobby"), true);
-	} else {
-		UE_LOG(LogTemp, Warning, TEXT("Failed to destroy session."));
+		SessionInterface = OnlineSub->GetSessionInterface();
+
+		if (SessionInterface.IsValid())
+			SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(DestroySessionDelegateHandle);
 	}
+
+	if (!bWasSuccessful)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Destroy session failed"));
+		return;
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("Session destroyed. Go to Main Menu"));
+	if (UWorld* World = GetWorld())
+		if (APlayerController* PC = UGameplayStatics::GetPlayerController(World, 0))
+			PC->ClientTravel(
+				TEXT("/Game/Maps/Lobby"),
+				TRAVEL_Absolute
+			);
 }
 
 void UDF_MainGameInstance::OnCreateSessionSuccess()

@@ -9,6 +9,7 @@
 #include "DF_MainGamemode.generated.h"
 
 class ABench;
+class ATargetPoint;
 enum class EGamePhase : uint8;
 class ADF_GameState;
 class AChair;
@@ -34,6 +35,8 @@ public:
 	virtual void StartVotePause_Implementation() override;
 
 protected:
+	virtual void BeginPlay() override;
+	
 	UFUNCTION()
 	void StartRoundsPhase();
 
@@ -56,7 +59,7 @@ protected:
 	void CountFinalVotesPhase();
 
 	UFUNCTION(Reliable, NetMulticast)
-	void Multi_Partipant(APlayerState* PS);
+	void Multi_Partipant(APlayerState* PS, bool newIsPartipant);
 
 	UFUNCTION(Reliable, NetMulticast)
 	void Multi_UpdateNameplate(AChair* Chair, AController* NewPlayer);

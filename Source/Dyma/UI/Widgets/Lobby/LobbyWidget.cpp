@@ -44,7 +44,12 @@ void ULobbyWidget::OnApplyCreateSessionClicked()
 void ULobbyWidget::OnExitSessionClicked()
 {
 	if (MainGameInstance)
+	{
+		Btn_ApplyCreateSession->SetIsEnabled(false);
+		Btn_ExitSession->SetIsEnabled(false);
+		
 		MainGameInstance->AdvancedDestroySession();
+	}
 }
 
 void ULobbyWidget::EndStartGame()

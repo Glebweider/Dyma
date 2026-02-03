@@ -3,9 +3,9 @@
 using UnrealBuildTool;
 using System.Collections.Generic;
 
-public class BurocratiaTarget : TargetRules
+public class BurocratyTarget : TargetRules
 {
-	public BurocratiaTarget(TargetInfo Target) : base(Target)
+	public BurocratyTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Game;
 		DefaultBuildSettings = BuildSettingsVersion.V5;

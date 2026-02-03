@@ -27,11 +27,10 @@ void AChairBar::StartInteract_Implementation(ACharacter* InteractPlayer)
 		if (!IsValid(InteractPlayer)) return;
 		if (Character != nullptr)
 		{
-			if (SoundBusy)
-				UGameplayStatics::PlaySoundAtLocation(this, SoundBusy, GetActorLocation());
-
+			UGameplayStatics::PlaySoundAtLocation(this, SoundBusy, GetActorLocation());
 			return;
 		};
+		
 		if (IPlayerStateInterface::Execute_GetActorSeat(InteractPlayer->GetPlayerState())) return;
 		
 		IPlayerStateInterface::Execute_SetActorSeat(InteractPlayer->GetPlayerState(), this);
@@ -103,7 +102,7 @@ void AChairBar::HandleLeaveSeat(ACharacter* Player)
 
 	if (auto Movement = Player->FindComponentByClass<UCharacterMovementComponent>())
 		Movement->SetMovementMode(MOVE_Walking);
-
+	
 	Character = nullptr;
 
 	IPlayerStateInterface::Execute_SetActorSeat(
@@ -111,6 +110,9 @@ void AChairBar::HandleLeaveSeat(ACharacter* Player)
 		nullptr
 	);
 	IToPlayerInterface::Execute_UpdateAnimSitting(Player, false);
+	
+	FVector Location = GetActorLocation();
+	Player->SetActorLocation(FVector(Location.X, Location.Y, Location.Z + 140.f));
 }
 
 void AChairBar::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

@@ -3,9 +3,9 @@
 using UnrealBuildTool;
 using System.Collections.Generic;
 
-public class BurocratiaEditorTarget : TargetRules
+public class BurocratyEditorTarget : TargetRules
 {
-	public BurocratiaEditorTarget( TargetInfo Target) : base(Target)
+	public BurocratyEditorTarget( TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V5;
