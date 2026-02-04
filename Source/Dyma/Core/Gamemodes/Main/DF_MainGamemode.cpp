@@ -145,7 +145,7 @@ void ADF_MainGamemode::StartDocReviewPhase()
 	);
 
 	if (DF_GameState) //60
-		DF_GameState->SetPhase(EGamePhase::DocReview, 10.f, this, FName("StartRoundsPhase"));
+		DF_GameState->SetPhase(EGamePhase::DocReview, 60.f, this, FName("StartRoundsPhase"));
 }
 
 void ADF_MainGamemode::StartDocReviewPhaseDelayed()
@@ -195,11 +195,11 @@ void ADF_MainGamemode::NextSpeaker()
 {
 	ACharacter* Speaker = RoundCharacters[CurrentSpeakerIndex];
 	
-	DF_GameState->SetPhaseDuration(5.f); // 45
+	DF_GameState->SetPhaseDuration(45.f); // 45
 	DF_GameState->SetMoveForCharacter(Speaker);
 	
 	GetWorldTimerManager().SetTimer(SpeakerTimer, this,
-		&ADF_MainGamemode::PauseBeforeNext, 5.f, false); // 45
+		&ADF_MainGamemode::PauseBeforeNext, 45.f, false); // 45
 }
 
 void ADF_MainGamemode::PauseBeforeNext()
@@ -222,13 +222,13 @@ void ADF_MainGamemode::PauseBeforeNext()
 
 void ADF_MainGamemode::StartDebatPhase()
 {
-	float Time = RoundCharacters.Num() * 5.f; // 15
+	float Time = RoundCharacters.Num() * 15.f; // 15
 	DF_GameState->SetPhase(EGamePhase::Debate, Time, this, FName("StartVotePhase"));
 }
 
 void ADF_MainGamemode::StartVotePhase()
 {
-	DF_GameState->SetPhase(EGamePhase::Vote, 10.f, this, FName("CountVotesPhase")); // 30
+	DF_GameState->SetPhase(EGamePhase::Vote, 30.f, this, FName("CountVotesPhase")); // 30
 
 	for (AChair* Chair : Chairs) {
 		if (ACharacter* Character = Chair->Character)
@@ -238,7 +238,7 @@ void ADF_MainGamemode::StartVotePhase()
 
 void ADF_MainGamemode::StartFinalVotePhase()
 {
-	DF_GameState->SetPhase(EGamePhase::FinalVote, 15.f, this, FName("CountFinalVotesPhase")); //60
+	DF_GameState->SetPhase(EGamePhase::FinalVote, 60.f, this, FName("CountFinalVotesPhase")); //60
 	
 	for (ABench* Bench : Benches)
 	{
