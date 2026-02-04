@@ -16,6 +16,8 @@ void UDF_MainGameInstance::Init()
 {
 	Super::Init();
 
+	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &UDF_MainGameInstance::OnMapLoaded);
+
 	if (IOnlineSubsystem* Subsystem = Online::GetSubsystem(GetWorld()))
 	{
 		SessionInterface = Subsystem->GetSessionInterface();
@@ -33,9 +35,19 @@ void UDF_MainGameInstance::Init()
 		if (LoadObject)
 			FaceRowName = LoadObject->SavedFaceRowName;
 	} else {
-		FaceRowName = FName("Sigma");
+		FaceRowName = FName("Рори");
 	}
 
+	ApplySettings();
+}
+
+void UDF_MainGameInstance::OnMapLoaded(UWorld* World)
+{
+	ApplySettings();
+}
+
+void UDF_MainGameInstance::ApplySettings()
+{
 	if (auto Settings = Cast<UDF_UserSettings>(GEngine->GetGameUserSettings()))
 	{
 		UGameplayStatics::SetSoundMixClassOverride(

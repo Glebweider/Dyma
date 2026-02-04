@@ -38,6 +38,9 @@ public:
 	USettingItem_Slider* Slider_MouseSensitivity;
 
 	UPROPERTY(BlueprintReadWrite, Category = "UI")
+	USettingItem_Slider* Slider_FPS;
+
+	UPROPERTY(BlueprintReadWrite, Category = "UI")
 	USettingItem_Slider* Slider_MasterVolume;
 
 	UPROPERTY(BlueprintReadWrite, Category = "UI")
@@ -85,6 +88,9 @@ private:
 
 	UFUNCTION()
 	void OnChangeMouseSensitivity();
+
+	UFUNCTION()
+	void OnChangeFPS();
 
 	UFUNCTION()
 	void OnChangeSettings();

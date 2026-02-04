@@ -51,7 +51,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
 	USoundClass* AmbientVolumeClass;
-
+	
 	virtual void Init() override;
 	virtual void InitUniquePlayerId();
 
@@ -60,6 +60,8 @@ public:
 	virtual void SetSessionJoinAllowed_Implementation(bool bAllowJoin) override;
 
 private:
+	void ApplySettings();
+	
 	IOnlineSessionPtr SessionInterface;
 	
 	UPROPERTY()
@@ -82,6 +84,9 @@ private:
 
 	UFUNCTION()
 	void OnDestroySessionComplete(FName SessionName, bool bWasSuccessful);
+
+	UFUNCTION()
+	void OnMapLoaded(UWorld* World);
 
 	virtual void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result) override;
 };

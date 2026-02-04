@@ -96,6 +96,16 @@ void UBookSettingsWidget::NativeConstruct()
 		
 		Slider_MouseSensitivity->OnValueChanged.AddDynamic(this, &UBookSettingsWidget::OnChangeMouseSensitivity);
 	}
+
+	// === FPS ===
+	if (Slider_FPS)
+	{
+		Slider_FPS->SetMinValue(0.3f);
+		Slider_FPS->SetMaxValue(2.4f);
+		Slider_FPS->SetValue(UserSettings->GetFrameRateLimit() / 100.f);
+		
+		Slider_FPS->OnValueChanged.AddDynamic(this, &UBookSettingsWidget::OnChangeFPS);
+	}
 	
 	// === Sounds ===
 	if (Slider_MasterVolume)
@@ -126,6 +136,14 @@ void UBookSettingsWidget::NativeConstruct()
 void UBookSettingsWidget::OnChangeMouseSensitivity()
 {
 	UserSettings->SetMouseSensitivity(Slider_MouseSensitivity->GetValue());
+	
+	GetWorld()->GetTimerManager().ClearTimer(SaveTimerHandle);
+	GetWorld()->GetTimerManager().SetTimer(SaveTimerHandle, this, &UBookSettingsWidget::SaveSettings, 0.5f, false);
+}
+
+void UBookSettingsWidget::OnChangeFPS()
+{
+	UserSettings->SetFrameRateLimit(Slider_FPS->GetValue() * 100.f);
 	
 	GetWorld()->GetTimerManager().ClearTimer(SaveTimerHandle);
 	GetWorld()->GetTimerManager().SetTimer(SaveTimerHandle, this, &UBookSettingsWidget::SaveSettings, 0.5f, false);
@@ -172,6 +190,7 @@ void UBookSettingsWidget::OnChangeSettingsVolume()
 void UBookSettingsWidget::SaveSettings()
 {
 	if (!UserSettings) return;
+	
 	UserSettings->ApplySettings(false);
 	UserSettings->SaveSettings();
 }
