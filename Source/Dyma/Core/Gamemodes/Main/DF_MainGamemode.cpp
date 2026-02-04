@@ -300,6 +300,8 @@ void ADF_MainGamemode::CountFinalVotesPhase()
 		for (AChair* Chair : Chairs)
 		{
 			if (!Chair || !Chair->Character) continue;
+			if (ACharacter* Character = Chair->Character)
+				IToPlayerInterface::Execute_StopVoteRound(Character);
 
 			if (auto PS = Cast<ADF_PlayerState>(Chair->Character->GetPlayerState()))
 				if (IPlayerStateInterface::Execute_GetIsParticipant(PS))
