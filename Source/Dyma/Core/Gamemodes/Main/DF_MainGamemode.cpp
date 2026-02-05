@@ -30,7 +30,7 @@ void ADF_MainGamemode::StartGame()
 	DF_GameState = GetGameState<ADF_GameState>();
 	
 	if (!DF_GameState) return;
-	if (DF_GameState->Projects.Num() > 1)
+	if (DF_GameState->Projects.Num() > 2)
 		for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 		{
 			if (auto PlayerPawn = It->Get()->GetCharacter())

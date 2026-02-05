@@ -22,9 +22,12 @@ class DYMA_API UDF_MainGameInstance : public UAdvancedFriendsGameInstance, publi
 	GENERATED_BODY()
 	
 public:
+	UPROPERTY(BlueprintReadWrite)
 	FName FaceRowName;
-	
+
+	UPROPERTY(BlueprintAssignable, Category="Face")
 	FFaceRowNameChangedSignature OnFaceRowNameChanged;
+	
 	TArray<FOnlineSessionSearchResult> OnlineSessionResults;
 	
 	UFUNCTION(BlueprintCallable)

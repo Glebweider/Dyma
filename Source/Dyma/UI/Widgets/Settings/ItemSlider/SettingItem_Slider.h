@@ -35,7 +35,13 @@ protected:
 	USlider* Slider;
 	
 	UPROPERTY(meta = (BindWidget))
+	UTextBlock* Text_Min;
+	
+	UPROPERTY(meta = (BindWidget))
 	UTextBlock* Text_Option;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* Text_Max;
 
 private:
 	UFUNCTION()
